@@ -85,11 +85,12 @@ def build_labels(label_pairs, binary_change_detection):
     return labels
 
 
-def load_img(path):
+def load_img(path, show=False):
     # read .tif
     f = rasterio.open(path)
     img = f.read()
-    print_dataset_image(f)
+    if show:
+        print_dataset_image(f)
     # BGRN -> RGBN
     image = np.dstack((img[2], img[1], img[0], img[3]))
     return image
@@ -171,7 +172,7 @@ def test_dataset_consistency():
         print("")
 
 
-def detect_data(root):
+def detect_data(root) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     images_sources = get_img_files(os.path.join(root, "planet_reduced"))
     labels_sources = get_labels_files(os.path.join(root, "labels"))
     images_sources = {
@@ -195,8 +196,42 @@ def create_labels(root, binary_change_detection=True):
             np.save(os.path.join(path, name), label)
 
 
+def calculate_normalization_parameters(root):
+    images_sources, labels_sources = detect_data(root)
+    sum_channels = np.array([0, 0, 0, 0], dtype=np.float64)
+    sum_squares_channels = np.array([0, 0, 0, 0], dtype=np.float64)
+    total_pixels = 1024 * 1024 * len(images_sources)
+    c = 0
+    for zone, images in list(images_sources.items()):
+        c += 1
+        print(
+            f"Calculating normalization parameters for zone {c}/{len(images_sources)}"
+        )
+        for img_path in images:
+            img = load_img(img_path)
+            img = np.transpose(img, (2, 0, 1))  # C, H, W
+            sum_channels += img.sum(axis=(1, 2))
+    mean_channels = sum_channels / total_pixels
+    c = 0
+    for zone, images in list(images_sources.items()):
+        c += 1
+        print(
+            f"Calculating normalization parameters for zone {c}/{len(images_sources)}"
+        )
+        for img_path in images:
+            img = load_img(img_path)
+            img = np.transpose(img, (2, 0, 1))  # C, H, W
+            sum_squares_channels += ((img - mean_channels.reshape((4, 1, 1))) ** 2).sum(
+                axis=(1, 2)
+            )
+    std_channels = np.sqrt(sum_squares_channels / total_pixels)
+    print(mean_channels)
+    print(std_channels)
+
+
 if __name__ == "__main__":
     # mgs = get_img_files("./DynamicEarthNet/planet_reduced")
     # labels = get_labels_files("./DynamicEarthNet/labels")
     # test_dataset_consistency()
-    create_labels("./DynamicEarthNet")
+    # create_labels("./DynamicEarthNet")
+    calculate_normalization_parameters("./DynamicEarthNet")
