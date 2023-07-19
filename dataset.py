@@ -1,15 +1,11 @@
-import os
-
 import numpy as np
 import torch
 from torch.utils.data import Dataset
-
+from torchvision import transforms
+from constants import mean_dataset, std_dataset
 from dataset_utils import (
     get_pairs,
-    build_labels,
     load_img,
-    get_img_files,
-    get_labels_files,
     detect_data,
     get_computed_labels_files,
 )
@@ -48,7 +44,12 @@ class DynamicEarthNet(Dataset):
         self.labels = get_computed_labels_files(
             self.label_pairs, root, binary_change_detection
         )
-        self.labels = build_labels(self.label_pairs, binary_change_detection)
+        self.mean = mean_dataset
+        self.std = std_dataset
+        self.normalize = transforms.Normalize(
+            mean=np.concatenate((self.mean, self.mean)),
+            std=np.concatenate((self.std, self.std)),
+        )  # 8channels =(4+4)
 
     def __len__(self):
         return len(self.img_pairs)
@@ -59,6 +60,7 @@ class DynamicEarthNet(Dataset):
         img = np.concatenate((img1, img2), axis=2)  # 1024x1024x8    8=(4+4)
         img = np.transpose(img, (2, 0, 1))  # 8x1024x1024
         img = torch.from_numpy(np.array(img, dtype=np.float32))
+        img = self.normalize(img)
         label_file = self.labels[index]
         label = np.load(label_file)
         label = torch.from_numpy(np.array(label, dtype=np.int32)).long()

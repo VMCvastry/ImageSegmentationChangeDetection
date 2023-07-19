@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import rasterio
-
+from constants import mean_dataset, std_dataset
 from utils import print_dataset_image
 
 
@@ -200,7 +200,7 @@ def calculate_normalization_parameters(root):
     images_sources, labels_sources = detect_data(root)
     sum_channels = np.array([0, 0, 0, 0], dtype=np.float64)
     sum_squares_channels = np.array([0, 0, 0, 0], dtype=np.float64)
-    total_pixels = 1024 * 1024 * len(images_sources)
+    total_pixels = 1024 * 1024 * len(images_sources) * 24
     c = 0
     for zone, images in list(images_sources.items()):
         c += 1
@@ -227,6 +227,13 @@ def calculate_normalization_parameters(root):
     std_channels = np.sqrt(sum_squares_channels / total_pixels)
     print(mean_channels)
     print(std_channels)
+
+
+def unnormalize_img(img):
+    img *= std_dataset.reshape((4, 1, 1))
+    img += mean_dataset.reshape((4, 1, 1))
+    img = img.astype(np.uint64)
+    return img
 
 
 if __name__ == "__main__":
