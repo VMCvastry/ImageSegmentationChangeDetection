@@ -12,30 +12,6 @@ from dataset_utils import (
 from utils import print_mask
 
 
-def get_img_files(path):
-    return {
-        "1311_3077_13": [
-            os.path.join(path, "1311_3077_13/2018-01-01.tif"),
-            os.path.join(path, "1311_3077_13/2018-02-01.tif"),
-        ]
-    }
-
-
-def get_labels_files(path):
-    return {
-        "1311_3077_13": [
-            os.path.join(
-                path,
-                "1311_3077_13_10N/Labels/Raster/10N-122W-40N-L3H-SR/10N-122W-40N-L3H-SR-2018_01_01.tif",
-            ),
-            os.path.join(
-                path,
-                "1311_3077_13_10N/Labels/Raster/10N-122W-40N-L3H-SR/10N-122W-40N-L3H-SR-2018_02_01.tif",
-            ),
-        ]
-    }
-
-
 class DynamicEarthNet(Dataset):
     def __init__(self, root, binary_change_detection=True):
         images_sources, labels_sources = detect_data(root)
