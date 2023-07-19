@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import rasterio
 
@@ -30,7 +32,7 @@ def build_label_mask(label):
 
 
 def build_change_mask(mask1, mask2):
-    mask = np.zeros((mask1.shape[0], mask1.shape[1]), dtype=np.int64)
+    mask = np.zeros((mask1.shape[0], mask1.shape[1]), dtype=np.int8)
     mask[mask1 == mask2] = 0
     mask[mask1 != mask2] = 1
     return mask
@@ -59,18 +61,27 @@ def build_classification_mask(mask1, mask2):
     return mask
 
 
+def build_label(label_pair, binary_change_detection):
+    i1, i2 = label_pair
+    label1 = rasterio.open(i1).read()
+    mask1 = build_label_mask(label1)
+    label2 = rasterio.open(i2).read()
+    mask2 = build_label_mask(label2)
+    if binary_change_detection:
+        label = build_change_mask(mask1, mask2)
+    else:
+        label = build_classification_mask(mask1, mask2)
+    return label
+
+
 def build_labels(label_pairs, binary_change_detection):
-    labels = []
+    labels = {}
     for i1, i2 in label_pairs:
-        label1 = rasterio.open(i1).read()
-        mask1 = build_label_mask(label1)
-        label2 = rasterio.open(i2).read()
-        mask2 = build_label_mask(label2)
-        if binary_change_detection:
-            label = build_change_mask(mask1, mask2)
-        else:
-            label = build_classification_mask(mask1, mask2)
-        labels.append(label)
+        label = build_label((i1, i2), binary_change_detection)
+        name = f"{os.path.basename(i1)}_{os.path.basename(i2)}.npy"
+        if name in labels.keys():
+            assert np.array_equal(labels[name], label)
+        labels[name] = label
     return labels
 
 
@@ -83,3 +94,109 @@ def load_img(path):
     image = np.dstack((img[2], img[1], img[0], img[3]))
     return image
     # return np.expand_dims(np.asarray(image, dtype=np.float32), axis=0)
+
+
+def get_img_files(path):
+    zones = os.listdir(path)
+    images = {}
+    for zone in zones:
+        images[zone] = []
+        zone_path = os.path.join(path, zone)
+        for img in os.listdir(zone_path):
+            if img.endswith(".tif"):
+                images[zone].append(os.path.join(zone_path, img))
+        assert len(set(images[zone])) == 24
+    # dummy = {
+    #     "1311_3077_13": [
+    #         os.path.join(path, "1311_3077_13/2018-01-01.tif"),
+    #         os.path.join(path, "1311_3077_13/2018-02-01.tif"),
+    #     ]
+    # }
+    return images
+
+
+def get_labels_files(path):
+    zones = os.listdir(path)
+    labels = {}
+    for zone in zones:
+        zone_name = zone[:-4]
+        labels[zone_name] = []
+        zone_path = os.path.join(path, zone, "Labels/Raster")
+        folder = os.listdir(zone_path)
+        assert len(folder) == 1
+        zone_path = os.path.join(zone_path, folder[0])
+        for img in os.listdir(zone_path):
+            if img.endswith(
+                ".tif"
+            ):  # There are a couple of .aux.xml files in the folder. eg 36N-30E-7N-L3H-SR-2018-06-01.tif.aux.xml
+                labels[zone_name].append(os.path.join(zone_path, img))
+        assert len(set(labels[zone_name])) == 24
+    dummy = {
+        "1311_3077_13": [
+            os.path.join(
+                path,
+                "1311_3077_13_10N/Labels/Raster/10N-122W-40N-L3H-SR/10N-122W-40N-L3H-SR-2018_01_01.tif",
+            ),
+            os.path.join(
+                path,
+                "1311_3077_13_10N/Labels/Raster/10N-122W-40N-L3H-SR/10N-122W-40N-L3H-SR-2018_02_01.tif",
+            ),
+        ]
+    }
+    return labels
+
+
+def get_computed_labels_files(pairs, path, binary_change_detection):
+    path = os.path.join(path, f"computed_labels_b-{binary_change_detection}")
+    labels = [f"{os.path.basename(i1)}_{os.path.basename(i2)}.npy" for i1, i2 in pairs]
+    return [os.path.join(path, label) for label in labels]
+
+
+def test_dataset_consistency():
+    imgs = get_img_files("./DynamicEarthNet/planet_reduced")
+    labels = get_labels_files("./DynamicEarthNet/labels")
+    print(len(labels.keys()))
+    print(len(imgs.keys()))
+    for zone in imgs:
+        if zone not in labels:
+            # print("Zone {} not in labels".format(zone))
+            continue
+        print(zone)
+        im = [x[-14:] for x in imgs[zone]]
+        lb = [x[-14:] for x in labels[zone]]
+        print(im)
+        print(lb)
+        eq = [x == y.replace("_", "-") for x, y in zip(im, lb)]
+        assert all([x == y.replace("_", "-") for x, y in zip(im, lb)])
+        print("")
+
+
+def detect_data(root):
+    images_sources = get_img_files(os.path.join(root, "planet_reduced"))
+    labels_sources = get_labels_files(os.path.join(root, "labels"))
+    images_sources = {
+        zone: images
+        for zone, images in images_sources.items()
+        if zone in labels_sources.keys()
+    }  # 20 zones are not in the labels
+    return images_sources, labels_sources
+
+
+def create_labels(root, binary_change_detection=True):
+    images_sources, labels_sources = detect_data(root)
+    img_pairs, label_pairs = get_pairs(images_sources, labels_sources)
+    assert len(img_pairs) == len(label_pairs)
+    print(f"Found {len(img_pairs)} pairs of images and labels")
+    path = os.path.join(root, f"computed_labels_b-{binary_change_detection}")
+    for i in range(0, len(label_pairs), 100):
+        print(f"Building label {i}/{len(label_pairs)}", flush=True)
+        labels = build_labels(label_pairs[i : i + 100], binary_change_detection)
+        for name, label in labels.items():
+            np.save(os.path.join(path, name), label)
+
+
+if __name__ == "__main__":
+    # mgs = get_img_files("./DynamicEarthNet/planet_reduced")
+    # labels = get_labels_files("./DynamicEarthNet/labels")
+    # test_dataset_consistency()
+    create_labels("./DynamicEarthNet")

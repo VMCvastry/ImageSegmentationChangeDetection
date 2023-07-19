@@ -4,7 +4,15 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from dataset_utils import get_pairs, build_labels, load_img
+from dataset_utils import (
+    get_pairs,
+    build_labels,
+    load_img,
+    get_img_files,
+    get_labels_files,
+    detect_data,
+    get_computed_labels_files,
+)
 from utils import print_mask
 
 
@@ -34,11 +42,11 @@ def get_labels_files(path):
 
 class DynamicEarthNet(Dataset):
     def __init__(self, root, binary_change_detection=True):
-        self.images_sources = get_img_files(os.path.join(root, "planet_reduced"))
-        self.labels_sources = get_labels_files(os.path.join(root, "labels"))
-        assert len(self.images_sources) == len(self.labels_sources)
-        self.img_pairs, self.label_pairs = get_pairs(
-            self.images_sources, self.labels_sources
+        images_sources, labels_sources = detect_data(root)
+        self.img_pairs, self.label_pairs = get_pairs(images_sources, labels_sources)
+        print(f"Found {len(self.img_pairs)} pairs of images and labels")
+        self.labels = get_computed_labels_files(
+            self.label_pairs, root, binary_change_detection
         )
         self.labels = build_labels(self.label_pairs, binary_change_detection)
 
@@ -51,7 +59,8 @@ class DynamicEarthNet(Dataset):
         img = np.concatenate((img1, img2), axis=2)  # 1024x1024x8    8=(4+4)
         img = np.transpose(img, (2, 0, 1))  # 8x1024x1024
         img = torch.from_numpy(np.array(img, dtype=np.float32))
-        label = self.labels[index]
+        label_file = self.labels[index]
+        label = np.load(label_file)
         label = torch.from_numpy(np.array(label, dtype=np.int32)).long()
         return img, label
 
