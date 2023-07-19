@@ -46,6 +46,7 @@ def calculate_normalization_parameters(root):
 
 
 def create_labels(root, binary_change_detection=True):
+    # Computes all the change labels for the possible pairs of images
     images_sources, labels_sources = detect_data(root)
     img_pairs, label_pairs = get_pairs(images_sources, labels_sources)
     assert len(img_pairs) == len(label_pairs)
@@ -56,25 +57,6 @@ def create_labels(root, binary_change_detection=True):
         labels = build_labels(label_pairs[i : i + 100], binary_change_detection)
         for name, label in labels.items():
             np.save(os.path.join(path, name), label)
-
-
-def test_dataset_consistency():
-    imgs = get_img_files("../DynamicEarthNet/planet_reduced")
-    labels = get_labels_files("../DynamicEarthNet/labels")
-    print(len(labels.keys()))
-    print(len(imgs.keys()))
-    for zone in imgs:
-        if zone not in labels:
-            # print("Zone {} not in labels".format(zone))
-            continue
-        print(zone)
-        im = [x[-14:] for x in imgs[zone]]
-        lb = [x[-14:] for x in labels[zone]]
-        print(im)
-        print(lb)
-        eq = [x == y.replace("_", "-") for x, y in zip(im, lb)]
-        assert all([x == y.replace("_", "-") for x, y in zip(im, lb)])
-        print("")
 
 
 def build_labels(label_pairs, binary_change_detection):
@@ -101,13 +83,45 @@ def build_label(label_pair, binary_change_detection):
     return label
 
 
+def build_label_mask(label):
+    # Squash the 7 layers of the label into a single mask
+    mask = np.zeros((label.shape[1], label.shape[2]), dtype=np.int64)
+    for i in range(7):
+        if i == 6:  # ignore the snow and ice class
+            mask[
+                label[i, :, :] == 255
+            ] = i  # NOTE Originally -1, probably not necessary
+        else:
+            mask[label[i, :, :] == 255] = i
+    return mask
+
+
+def get_one_hot_index(p1, p2):
+    # Maps a directional variation to a one-hot index
+    if p1 == p2:
+        return 42
+    i = 6 * p1 + (p2 if p2 < p1 else p2 - 1)
+    return i
+
+
 def build_classification_mask(mask1, mask2):
+    # Change classifcation
+
+    """
+    1. Impervious surfaces
+    2. Agriculture
+    3. Forest and Other Vegetation
+    4. wetlands
+    5. Soil
+    6. Water
+    7. Snow and Ice    IGNORE
+    """
     mask = np.zeros((mask1.shape[0], mask1.shape[1]), dtype=np.int64)
     p1, p2 = None, None
     # 0,0 0,1 0,2 0,3 0,4 0,5 0,6 1,0 1,1 1,2 1,3 1,4 1,5 1,6 2,0 2,1 2,2 2,3 2,4 2,5 2,6 3,0 3,1 3,2 3,3 3,4 3,5 3,6
     # X   0   1   2   3   4   5   6   X   7   8   9   10  11  12  13  X   14  15  16  17  18  19  20  X   21  22  23
     # Max=36+5=41
-    # No change= 42
+    # No change (X)= 42
     for x in range(mask1.shape[0]):
         for y in range(mask1.shape[1]):
             p1 = mask1[x, y]
@@ -117,28 +131,31 @@ def build_classification_mask(mask1, mask2):
     return mask
 
 
-def get_one_hot_index(p1, p2):
-    if p1 == p2:
-        return 42
-    i = 6 * p1 + (p2 if p2 < p1 else p2 - 1)
-    return i
-
-
-def build_label_mask(label):
-    mask = np.zeros((label.shape[1], label.shape[2]), dtype=np.int64)
-    for i in range(7):
-        if i == 6:  # ignore the snow and ice class
-            mask[label[i, :, :] == 255] = i  # NOTE Originally -1
-        else:
-            mask[label[i, :, :] == 255] = i
-    return mask
-
-
 def build_change_mask(mask1, mask2):
+    # Binary change detection
     mask = np.zeros((mask1.shape[0], mask1.shape[1]), dtype=np.int8)
     mask[mask1 == mask2] = 0
     mask[mask1 != mask2] = 1
     return mask
+
+
+def test_dataset_consistency():
+    imgs = get_img_files("../DynamicEarthNet/planet_reduced")
+    labels = get_labels_files("../DynamicEarthNet/labels")
+    print(len(labels.keys()))
+    print(len(imgs.keys()))
+    for zone in imgs:
+        if zone not in labels:
+            # print("Zone {} not in labels".format(zone))
+            continue
+        print(zone)
+        im = [x[-14:] for x in imgs[zone]]
+        lb = [x[-14:] for x in labels[zone]]
+        print(im)
+        print(lb)
+        eq = [x == y.replace("_", "-") for x, y in zip(im, lb)]
+        assert all([x == y.replace("_", "-") for x, y in zip(im, lb)])
+        print("")
 
 
 if __name__ == "__main__":

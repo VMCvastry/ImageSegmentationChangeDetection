@@ -23,6 +23,7 @@ def get_one_hot_from_mask(mask):
 
 
 def get_pairs(imgs: dict, labels: dict):
+    # Creates all possible pairs of the 24 images for each zone.
     img_pairs = []
     label_pairs = []
     for key in imgs.keys():
@@ -38,7 +39,6 @@ def get_pairs(imgs: dict, labels: dict):
 
 
 def load_img(path, show=False):
-    # read .tif
     f = rasterio.open(path)
     img = f.read()
     if show:
@@ -103,12 +103,14 @@ def get_labels_files(path):
 
 
 def get_computed_labels_files(pairs, path, binary_change_detection):
+    # Read the precomputed change label for a given pair of labels
     path = os.path.join(path, f"computed_labels_b-{binary_change_detection}")
     labels = [f"{os.path.basename(i1)}_{os.path.basename(i2)}.npy" for i1, i2 in pairs]
     return [os.path.join(path, label) for label in labels]
 
 
 def detect_data(root) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    # Get all files in dataset folder
     images_sources = get_img_files(os.path.join(root, "planet_reduced"))
     labels_sources = get_labels_files(os.path.join(root, "labels"))
     images_sources = {
