@@ -8,12 +8,14 @@ from dataset_utils import (
     load_img,
     detect_data,
     get_computed_labels_files,
+    get_one_hot_from_mask,
 )
 from utils import print_mask
 
 
 class DynamicEarthNet(Dataset):
     def __init__(self, root, binary_change_detection=True):
+        self.binary_change_detection = binary_change_detection
         images_sources, labels_sources = detect_data(root)
         self.img_pairs, self.label_pairs = get_pairs(images_sources, labels_sources)
         print(f"Found {len(self.img_pairs)} pairs of images and labels")
@@ -39,6 +41,8 @@ class DynamicEarthNet(Dataset):
         img = self.normalize(img)
         label_file = self.labels[index]
         label = np.load(label_file)
+        if not self.binary_change_detection:
+            label = get_one_hot_from_mask(label)
         label = torch.from_numpy(np.array(label, dtype=np.int32)).long()
         return img, label
 

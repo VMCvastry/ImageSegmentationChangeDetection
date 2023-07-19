@@ -46,7 +46,7 @@ def get_one_hot_index(p1, p2):
 
 
 def build_classification_mask(mask1, mask2):
-    mask = np.zeros((mask1.shape[0], mask1.shape[1], 1), dtype=np.int64)
+    mask = np.zeros((mask1.shape[0], mask1.shape[1]), dtype=np.int64)
     p1, p2 = None, None
     # 0,0 0,1 0,2 0,3 0,4 0,5 0,6 1,0 1,1 1,2 1,3 1,4 1,5 1,6 2,0 2,1 2,2 2,3 2,4 2,5 2,6 3,0 3,1 3,2 3,3 3,4 3,5 3,6
     # X   0   1   2   3   4   5   6   X   7   8   9   10  11  12  13  X   14  15  16  17  18  19  20  X   21  22  23
@@ -57,8 +57,17 @@ def build_classification_mask(mask1, mask2):
             p1 = mask1[x, y]
             p2 = mask2[x, y]
             i = get_one_hot_index(p1, p2)
-            mask[x, y, 0] = i
+            mask[x, y] = i
     return mask
+
+
+def get_one_hot_from_mask(mask):
+    one_hot = np.zeros((mask.shape[0], mask.shape[1], 43), dtype=np.int64)
+    for x in range(mask.shape[0]):
+        for y in range(mask.shape[1]):
+            i = mask[x, y]
+            one_hot[x, y, i] = 1
+    return one_hot
 
 
 def build_label(label_pair, binary_change_detection):
