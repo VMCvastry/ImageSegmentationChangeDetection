@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 from constants import mean_dataset, std_dataset
-from dataset_utils import (
+from .dataset_utils import (
     get_pairs,
     load_img,
     detect_data,
@@ -43,7 +43,7 @@ class DynamicEarthNet(Dataset):
         label = np.load(label_file)
         if not self.binary_change_detection:
             label = get_one_hot_from_mask(label)
-        label = torch.from_numpy(np.array(label, dtype=np.int32)).long()
+        label = torch.from_numpy(np.array(label, dtype=np.float32))  # why float?
         return img, label
 
 
