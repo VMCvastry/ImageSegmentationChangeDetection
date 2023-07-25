@@ -49,14 +49,16 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--bs", type=int, default=2)
     parser.add_argument("--subset", type=float, default=0.01)
+    parser.add_argument("--dataset_location", type=str, default="./DynamicEarthNet")
     args = parser.parse_args()
     batch_size = args.bs
     epochs = args.epochs
     lr = args.lr
     subset_percentage = args.subset
+    dataset_location = args.dataset_location
 
     train_loader, test_loader, val_loader = get_dataloaders(
-        "./DynamicEarthNet",
+        dataset_location,
         batch_size=batch_size,
         binary_change_detection=True,
         subset_percentage=subset_percentage,
