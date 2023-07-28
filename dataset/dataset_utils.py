@@ -28,10 +28,14 @@ def get_pairs(imgs: dict, labels: dict):
     label_pairs = []
     for key in imgs.keys():
         assert key in labels.keys()
-        i = sorted(imgs[key])
+        im = sorted(imgs[key])
         l = sorted(labels[key])
-        for img, label in zip(i, l):
-            for img2, label2 in zip(i, l):
+        for i, (img, label) in enumerate(zip(im, l)):
+            if i % 4 != 0:
+                continue
+            for j, (img2, label2) in enumerate(zip(im, l)):
+                if j % 4 != 0:
+                    continue
                 img_pairs.append((img, img2))
                 label_pairs.append((label, label2))
 
