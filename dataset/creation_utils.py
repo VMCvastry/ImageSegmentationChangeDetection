@@ -9,6 +9,7 @@ from dataset.dataset_utils import (
     get_pairs,
     get_img_files,
     get_labels_files,
+    get_computed_labels_files,
 )
 
 
@@ -57,6 +58,25 @@ def create_labels(root, binary_change_detection=True):
         labels = build_labels(label_pairs[i : i + 100], binary_change_detection)
         for name, label in labels.items():
             np.save(os.path.join(path, name), label)
+
+
+def create_reduced_dataset(root, binary_change_detection=True):
+    # Computes all the change labels for the possible pairs of images
+    images_sources, labels_sources = detect_data(root)
+    img_pairs, label_pairs = get_pairs(images_sources, labels_sources)
+    assert len(img_pairs) == len(label_pairs)
+    print(f"Found {len(img_pairs)} pairs of images and labels")
+    print(img_pairs[0], img_pairs[1])
+    computed_pairs = get_computed_labels_files(
+        label_pairs, root, binary_change_detection
+    )
+    imgs = {i for i, j in img_pairs}
+    labels = {i for i, j in label_pairs}
+    files = imgs.union(labels).union(computed_pairs)
+    for f in files:
+        new = f.replace("DynamicEarthNet", "DynamicEarthNet_reduced")
+        os.makedirs(os.path.dirname(new), exist_ok=True)
+        os.system(f"cp {f} {new}")
 
 
 def build_labels(label_pairs, binary_change_detection):
@@ -161,4 +181,5 @@ def test_dataset_consistency():
 if __name__ == "__main__":
     # test_dataset_consistency()
     # create_labels("./DynamicEarthNet")
-    calculate_normalization_parameters("./DynamicEarthNet")
+    # calculate_normalization_parameters("./DynamicEarthNet")
+    create_reduced_dataset("./DynamicEarthNet")
