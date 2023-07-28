@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_location", type=str, default="./DynamicEarthNet_reduced"
     )
-    parser.add_argument("--net_reduction", type=str, default=32)
+    parser.add_argument("--net_reduction", type=int, default=32)
     args = parser.parse_args()
     batch_size = args.bs
     epochs = args.epochs
