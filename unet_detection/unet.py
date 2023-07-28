@@ -2,7 +2,7 @@ from .blocks import *
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=False):
+    def __init__(self, n_channels, n_classes, reduction_factor=1, bilinear=False):
         super(UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -19,18 +19,23 @@ class UNet(nn.Module):
         # self.up3 = Up(256, 128 // factor, bilinear)
         # self.up4 = Up(128, 64, bilinear)
         # self.outc = OutConv(64, n_classes)
-        red = 32
-        self.inc = DoubleConv(n_channels, 64 // red)
-        self.down1 = Down(64 // red, 128 // red)
-        self.down2 = Down(128 // red, 256 // red)
-        self.down3 = Down(256 // red, 512 // red)
+        self.inc = DoubleConv(n_channels, 64 // reduction_factor)
+        self.down1 = Down(64 // reduction_factor, 128 // reduction_factor)
+        self.down2 = Down(128 // reduction_factor, 256 // reduction_factor)
+        self.down3 = Down(256 // reduction_factor, 512 // reduction_factor)
         factor = 2 if bilinear else 1
-        self.down4 = Down(512 // red, (1024 // red) // factor)
-        self.up1 = Up(1024 // red, (512 // red) // factor, bilinear)
-        self.up2 = Up(512 // red, (256 // red) // factor, bilinear)
-        self.up3 = Up(256 // red, (128 // red) // factor, bilinear)
-        self.up4 = Up(128 // red, (64 // red), bilinear)
-        self.outc = OutConv(64 // red, n_classes)
+        self.down4 = Down(512 // reduction_factor, (1024 // reduction_factor) // factor)
+        self.up1 = Up(
+            1024 // reduction_factor, (512 // reduction_factor) // factor, bilinear
+        )
+        self.up2 = Up(
+            512 // reduction_factor, (256 // reduction_factor) // factor, bilinear
+        )
+        self.up3 = Up(
+            256 // reduction_factor, (128 // reduction_factor) // factor, bilinear
+        )
+        self.up4 = Up(128 // reduction_factor, (64 // reduction_factor), bilinear)
+        self.outc = OutConv(64 // reduction_factor, n_classes)
 
     def forward(self, x):
         x1 = self.inc(x)

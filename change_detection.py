@@ -48,14 +48,18 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--bs", type=int, default=2)
-    parser.add_argument("--subset", type=float, default=0.01)
-    parser.add_argument("--dataset_location", type=str, default="./DynamicEarthNet")
+    parser.add_argument("--subset", type=float, default=1)
+    parser.add_argument(
+        "--dataset_location", type=str, default="./DynamicEarthNet_reduced"
+    )
+    parser.add_argument("--net_reduction", type=str, default=32)
     args = parser.parse_args()
     batch_size = args.bs
     epochs = args.epochs
     lr = args.lr
     subset_percentage = args.subset
     dataset_location = args.dataset_location
+    net_reduction = args.net_reduction
 
     train_loader, test_loader, val_loader = get_dataloaders(
         dataset_location,
@@ -63,7 +67,7 @@ if __name__ == "__main__":
         binary_change_detection=True,
         subset_percentage=subset_percentage,
     )
-    model = UNet(8, 1)
+    model = UNet(8, 1, reduction_factor=net_reduction)
     # model.load_state_dict(torch.load("./models/model.pth"))
 
     criterion = torch.nn.BCEWithLogitsLoss()
