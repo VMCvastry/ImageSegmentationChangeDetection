@@ -31,11 +31,11 @@ def get_pairs(imgs: dict, labels: dict):
         im = sorted(imgs[key])
         l = sorted(labels[key])
         for i, (img, label) in enumerate(zip(im, l)):
-            if i % 12 != 0:
-                continue
+            # if i % 12 != 0:
+            #     continue
             for j, (img2, label2) in enumerate(zip(im, l)):
-                if j % 12 != 0:
-                    continue
+                # if j % 12 != 0:
+                #     continue
                 img_pairs.append((img, img2))
                 label_pairs.append((label, label2))
 
@@ -62,8 +62,8 @@ def get_img_files(path):
         for img in os.listdir(zone_path):
             if img.endswith(".tif"):
                 images[zone].append(os.path.join(zone_path, img))
-        assert len(set(images[zone])) == 24
-    del images["6813_3313_13"]
+    if "6813_3313_13" in images:
+        del images["6813_3313_13"]
     # dummy = {
     #     "1311_3077_13": [
     #         os.path.join(path, "1311_3077_13/2018-01-01.tif"),
@@ -88,8 +88,8 @@ def get_labels_files(path):
                 ".tif"
             ):  # There are a couple of .aux.xml files in the folder. eg 36N-30E-7N-L3H-SR-2018-06-01.tif.aux.xml
                 labels[zone_name].append(os.path.join(zone_path, img))
-        assert len(set(labels[zone_name])) == 24
-    del labels["6813_3313_13"]
+    if "6813_3313_13" in labels:
+        del labels["6813_3313_13"]
 
     dummy = {
         "1311_3077_13": [
