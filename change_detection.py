@@ -9,7 +9,6 @@ from dataset import get_dataloaders
 from unet_detection import UNet
 from trainer import Trainer
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -46,7 +45,7 @@ if __name__ == "__main__":
     # )
     trainer = Trainer(
         model=model,
-        output_label=f"test_net_{uuid.uuid4()[0:8]}",
+        output_label=f"test_net_{str(uuid.uuid4())[0:8]}",
         load_model="",
         loss_fn=criterion,
         optimizer=torch.optim.Adam(model.parameters(), lr=lr),
@@ -55,4 +54,5 @@ if __name__ == "__main__":
         train_loader, val_loader, batch_size=None, n_epochs=epochs, n_features=None
     )
     trainer.plot_losses()
-    accuracy = trainer.test(test_loader)
+    trainer.test(test_loader)
+    trainer.accuracy(test_loader)
