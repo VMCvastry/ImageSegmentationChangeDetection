@@ -54,4 +54,5 @@ if __name__ == "__main__":
     trainer.train(
         train_loader, val_loader, batch_size=None, n_epochs=epochs, n_features=None
     )
+    trainer.plot_losses()
     accuracy = trainer.test(test_loader)

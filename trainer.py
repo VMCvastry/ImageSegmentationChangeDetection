@@ -50,6 +50,19 @@ class Trainer:
         self.optimizer.zero_grad()
         return loss.item()
 
+    def batch_eval_cycle(self, loader):
+        losses = []
+        self.model.eval()
+        for x, label in loader:
+            # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
+            x = x.to(self.device)
+            label = label.to(self.device)
+            predicted_value = self.model(x)
+            loss = self.loss_fn(predicted_value, label)
+            losses.append(loss.item())
+        loss = np.mean(losses)
+        return loss
+
     def train(self, train_loader, val_loader, batch_size=64, n_epochs=50, n_features=1):
         model_name = (
             f'{self.output_label}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
@@ -59,27 +72,19 @@ class Trainer:
         logging.info(f"Starting training at {start_time}")
         epoch_time = start_time
         for epoch in range(1, n_epochs + 1):
-            # Sets model to train mode
             self.model.train()
             batch_losses = []
             for x_batch, value_batch in train_loader:
                 # x_batch = x_batch.view([batch_size, -1, n_features]).to(self.device)
                 x_batch = x_batch.to(self.device)
+                value_batch = value_batch.to(self.device)
                 loss = self.train_step(x_batch, value_batch)
                 batch_losses.append(loss)
             training_loss = np.mean(batch_losses)
             self.train_losses.append(training_loss)
 
             with torch.no_grad():
-                batch_val_losses = []
-                self.model.eval()
-                for x_batch, value_batch in val_loader:
-                    # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
-                    x_batch = x_batch.to(self.device)
-                    predicted_value = self.model(x_batch)
-                    loss = self.loss_fn(predicted_value, value_batch)
-                    batch_val_losses.append(loss.item())
-                validation_loss = np.mean(batch_val_losses)
+                validation_loss = self.batch_eval_cycle(val_loader)
                 self.validation_losses.append(validation_loss)
             if True | (epoch <= 10) | (epoch % 50 == 0) | (epoch == n_epochs):
                 logging.info(
@@ -94,18 +99,7 @@ class Trainer:
 
     def test(self, test_loader):
         with torch.no_grad():
-            batch_losses = []
-            self.model.eval()
-            for x_test, value in test_loader:
-                # x_test = x_test.view([batch_size, -1, n_features]).to(self.device)
-                value = value.to(self.device)
-                predicted_value = self.model(x_test)
-                loss = self.loss_fn(
-                    predicted_value,
-                    value,
-                )
-                batch_losses.append(loss.item())
-            test_loss = np.mean(batch_losses)
+            test_loss = self.batch_eval_cycle(test_loader)
             logging.info(f"Test loss: {test_loss:.4f}\t ")
         return test_loss
 
@@ -117,26 +111,9 @@ class Trainer:
         plt.show()
         plt.close()
 
-    def evaluate(self, test_loader, batch_size=1, n_features=1):
-        with torch.no_grad():
-            values_predictions = []
-            values = []
-            for x_test, value in test_loader:
-                # x_test = x_test.view([batch_size, -1, n_features]).to(self.device)
-                value = value.to(self.device)
-                x_test = x_test.to(self.device)
-                self.model.eval()
-                predicted_value = self.model(x_test)
-                values_predictions.append(
-                    predicted_value.to(self.device).detach().numpy()
-                )
-                values.append(value.to(self.device).detach().numpy())
-
-        return values_predictions, values
-
     def poll(self, x):
         x = x.unsqueeze(0).to(self.device)  # add batch dimension
         with torch.no_grad():
             self.model.eval()
-            value = self.model(x)  # super slow during self play.
+            value = self.model(x)
         return value.squeeze(0)  # remove batch dimension
