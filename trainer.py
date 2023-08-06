@@ -119,7 +119,7 @@ class Trainer:
         plt.plot(self.validation_losses, label="Validation loss")
         plt.legend()
         plt.title("Losses")
-        plt.show()
+        # plt.show()
         plt.savefig(f"models/{self.output_label}_losses.png")
         plt.close()
 
