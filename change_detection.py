@@ -46,7 +46,7 @@ if __name__ == "__main__":
     net_reduction = args.net_reduction
     logging.info(f"Parsed args: {args}")
 
-    train_loader, test_loader, val_loader = get_dataloaders(
+    train_loader, test_loader, val_loader, accuracy_loader = get_dataloaders(
         dataset_location,
         batch_size=batch_size,
         binary_change_detection=True,
@@ -73,4 +73,3 @@ if __name__ == "__main__":
     )
     trainer.plot_losses()
     trainer.test(test_loader)
-    trainer.accuracy(test_loader)

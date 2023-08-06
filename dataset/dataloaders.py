@@ -27,7 +27,8 @@ def get_dataloaders(
     test_loader = torch.utils.data.DataLoader(
         test_dataset, batch_size=batch_size, shuffle=True
     )
+    accuracy_loader = torch.utils.data.DataLoader(data, batch_size=512, shuffle=True)
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=batch_size, shuffle=True
     )
-    return train_loader, test_loader, val_loader
+    return train_loader, test_loader, val_loader, accuracy_loader

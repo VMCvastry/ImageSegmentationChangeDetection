@@ -50,11 +50,13 @@ class Trainer:
         self.optimizer.zero_grad()
         return loss.item()
 
-    def batch_eval_cycle(self, loader, loss_fn=None):
+    def batch_eval_cycle(self, loader, loss_fn=None, get_accuracy=False):
         if loss_fn is None:
             loss_fn = self.loss_fn
         losses = []
         self.model.eval()
+        correct = 0
+        total = 0
         for x, label in loader:
             # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
             x = x.to(self.device)
@@ -62,8 +64,12 @@ class Trainer:
             predicted_value = self.model(x)
             loss = loss_fn(predicted_value, label)
             losses.append(loss.item())
+            total += label.size(0) * label.size(1) * label.size(2)
+            if get_accuracy:
+                predicted_value = predicted_value > 0.5
+                correct += (predicted_value == label).sum().item()
         loss = np.mean(losses)
-        return loss
+        return loss, correct / total if get_accuracy else -1
 
     def train(self, train_loader, val_loader, batch_size=64, n_epochs=50, n_features=1):
         model_name = (
@@ -86,11 +92,13 @@ class Trainer:
             self.train_losses.append(training_loss)
 
             with torch.no_grad():
-                validation_loss = self.batch_eval_cycle(val_loader)
+                validation_loss, accuracy = self.batch_eval_cycle(
+                    val_loader, get_accuracy=True
+                )
                 self.validation_losses.append(validation_loss)
             if True | (epoch <= 10) | (epoch % 50 == 0) | (epoch == n_epochs):
                 logging.info(
-                    f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t Validation loss: {validation_loss:.4f},{datetime.now()}, epoch time {datetime.now() - epoch_time}"
+                    f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t Validation loss: {validation_loss:.4f}, Accuracy: {accuracy*100:.2f}%,{datetime.now()}, epoch time {datetime.now() - epoch_time}"
                 )
             epoch_time = datetime.now()
         logging.info(
@@ -101,28 +109,10 @@ class Trainer:
 
     def test(self, test_loader):
         with torch.no_grad():
-            test_loss = self.batch_eval_cycle(test_loader)
+            test_loss, accuracy = self.batch_eval_cycle(test_loader, get_accuracy=True)
             logging.info(f"Test loss: {test_loss:.4f}\t ")
+            logging.info(f"Accuracy of the network: {100 * accuracy:.2f}%")
         return test_loss
-
-    def accuracy(self, loader):
-        with torch.no_grad():
-            self.model.eval()
-            correct = 0
-            total = 0
-            value_sum = 0
-            for x, label in loader:
-                x = x.to(self.device)
-                label = label.to(self.device)
-                outputs = self.model(x)
-                # _, predicted = torch.max(outputs.data, 1)
-                predicted = outputs > 0.5
-                value_sum += outputs.sum().item()
-                total += label.size(0)
-                correct += (predicted == label).sum().item()
-            logging.info(f"Accuracy of the network: {100 * correct / total}%")
-            logging.info(f"Average value: {value_sum / total}")
-        return 100 * correct / total
 
     def plot_losses(self):
         plt.plot(self.train_losses, label="Training loss")
