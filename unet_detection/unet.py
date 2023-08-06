@@ -36,6 +36,7 @@ class UNet(nn.Module):
         )
         self.up4 = Up(128 // reduction_factor, (64 // reduction_factor), bilinear)
         self.outc = OutConv(64 // reduction_factor, n_classes)
+        self.sigmoid = nn.Sigmoid()  # remove for classification
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -48,7 +49,8 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         logits = self.outc(x)
-        return logits.squeeze(1)  # added squeeze
+        probs = self.sigmoid(logits)
+        return probs.squeeze(1)  # added squeeze
 
     # def use_checkpointing(self):
     #     self.inc = torch.utils.checkpoint(self.inc)

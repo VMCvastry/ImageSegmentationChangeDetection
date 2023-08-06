@@ -53,7 +53,8 @@ if __name__ == "__main__":
         subset_percentage=subset_percentage,
     )
     model = UNet(8, 1, reduction_factor=net_reduction)
-    criterion = torch.nn.BCEWithLogitsLoss()
+    # criterion = torch.nn.BCEWithLogitsLoss()
+    criterion = torch.nn.BCELoss()
     # optimizer = optim.SGD(
     #     model.parameters(),
     #     momentum=MOMENTUM,

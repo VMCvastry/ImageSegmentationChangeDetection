@@ -130,6 +130,7 @@ class Trainer:
         plt.legend()
         plt.title("Losses")
         plt.show()
+        plt.savefig(f"models/{self.output_label}_losses.png")
         plt.close()
 
     def poll(self, x):
