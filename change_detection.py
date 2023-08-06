@@ -1,3 +1,5 @@
+import datetime
+
 import torch
 
 from dataset import get_dataloaders
@@ -6,6 +8,9 @@ from unet_detection import UNet
 
 def train(model, train_loader, val_loader, epochs=10, lr=0.001):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    start = datetime.datetime.now()
+    print(start)
+    epoch_time = start
     for epoch in range(epochs):
         model.train()
         total_loss = 0
@@ -17,6 +22,9 @@ def train(model, train_loader, val_loader, epochs=10, lr=0.001):
             optimizer.step()
             total_loss += loss.item()
         print(f"Epoch {epoch} - Loss {total_loss / len(train_loader)}")
+        print(datetime.datetime.now())
+        print("Epoch time", datetime.datetime.now() - epoch_time)
+        epoch_time = datetime.datetime.now()
         # torch.save(model.state_dict(), "./models/model.pth")
         # print("Saved model")
         with torch.no_grad():
@@ -27,6 +35,7 @@ def train(model, train_loader, val_loader, epochs=10, lr=0.001):
                 loss = criterion(output, label)
                 total_loss += loss.item()
             print(f"Validation loss: {total_loss / len(val_loader)}")
+    print("Total time", datetime.datetime.now() - start)
 
 
 def test(model, test_loader):
