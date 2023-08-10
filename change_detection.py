@@ -52,8 +52,9 @@ if __name__ == "__main__":
         binary_change_detection=True,
         subset_percentage=subset_percentage,
     )
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet(8, 1, reduction_factor=net_reduction)
-    criterion = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor([20.0]))
+    criterion = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor([20.0]).to(device))
     # optimizer = optim.SGD(
     #     model.parameters(),
     #     momentum=MOMENTUM,
