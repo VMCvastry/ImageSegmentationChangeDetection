@@ -1,3 +1,4 @@
+import logging
 import os
 
 import numpy as np
@@ -123,6 +124,14 @@ def detect_data(root) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
         if zone in labels_sources.keys()
     }  # 20 zones are not in the labels
     return images_sources, labels_sources
+
+
+def balance_dataset(imgs, labels, binary):
+    if not binary:
+        raise NotImplementedError
+    labels_positive = sum(labels)
+    labels_negative = len(labels) - labels_positive
+    logging.info(f"Positive labels: {labels_positive}/{labels_negative}")
 
 
 if __name__ == "__main__":
