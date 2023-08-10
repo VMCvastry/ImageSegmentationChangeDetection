@@ -49,8 +49,8 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         logits = self.outc(x)
-        probs = self.sigmoid(logits)
-        return probs.squeeze(1)  # added squeeze
+        # probs = self.sigmoid(logits)
+        return logits.squeeze(1)  # added squeeze
 
     # def use_checkpointing(self):
     #     self.inc = torch.utils.checkpoint(self.inc)

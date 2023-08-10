@@ -62,19 +62,7 @@ class Trainer:
             # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
             x = x.to(self.device)
             label = label.to(self.device)
-            # predicted_value = self.model(x)
-            # label = torch.zeros_like(predicted_value) + 10
-
-            val1 += label.sum()
-            # 0.6  0.9  1.2   1
-            #  1.1  1.2  1.4   9
-            #  1.2  1.2  1.3   10
-            #  1.42  1.43  1.55   13
-            #  1.54  -  1.61  15
-            #   1.8    1.7  1.74   20
-            #  6     4.6  3.6  90
-            predicted_value = torch.zeros_like(label) + 0.2
-            val2 += predicted_value.sum()
+            predicted_value = self.model(x)
             loss = loss_fn(predicted_value, label)
             losses.append(loss.item())
             total += label.size(0) * label.size(1) * label.size(2)
@@ -82,7 +70,6 @@ class Trainer:
                 predicted_value = predicted_value > 0.5
                 correct += (predicted_value == label).sum().item()
         loss = np.mean(losses)
-        print(f"val1: {val1/total}, val2: {val2/total}")
         return loss, correct / total if get_accuracy else -1
 
     def train(self, train_loader, val_loader, batch_size=64, n_epochs=50, n_features=1):
