@@ -5,6 +5,7 @@ import uuid
 import torch
 import argparse
 
+from constants import WEIGHT_POSITIVE
 from dataset import get_dataloaders
 from unet_detection import UNet
 from trainer import Trainer
@@ -54,7 +55,9 @@ if __name__ == "__main__":
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet(8, 1, reduction_factor=net_reduction)
-    criterion = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor([20.0]).to(device))
+    criterion = torch.nn.BCEWithLogitsLoss(
+        pos_weight=torch.tensor([float(WEIGHT_POSITIVE * 2)]).to(device)
+    )
     # optimizer = optim.SGD(
     #     model.parameters(),
     #     momentum=MOMENTUM,
