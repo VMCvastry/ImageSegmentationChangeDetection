@@ -52,7 +52,7 @@ class DynamicEarthNet(Dataset):
         label = get_label(label_files, self.root, self.binary_change_detection)
         # if not self.binary_change_detection:
         #     label = get_one_hot_from_mask(label)
-        label = torch.from_numpy(np.array(label, dtype=np.float32))  # why float?
+        label = torch.from_numpy(np.array(label, dtype=np.float16))  # why float?
         return img, label
 
 

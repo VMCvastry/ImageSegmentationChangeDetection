@@ -12,7 +12,7 @@ def get_dataloaders(
 
     data = DynamicEarthNet(root, binary_change_detection=binary_change_detection)
     data = torch.utils.data.Subset(data, range(int(subset_percentage * len(data))))
-    train_size = int(0.8 * len(data))
+    train_size = int(0.6 * len(data))
     test_size = len(data) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(
         data, [train_size, test_size], generator=torch.Generator().manual_seed(SEED)
@@ -30,18 +30,23 @@ def get_dataloaders(
         batch_size=batch_size,
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
+        pin_memory=True,
     )
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=batch_size,
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
+        pin_memory=True,
     )
-    accuracy_loader = torch.utils.data.DataLoader(data, batch_size=512, shuffle=True)
+    accuracy_loader = torch.utils.data.DataLoader(
+        data, batch_size=512, shuffle=True, pin_memory=True
+    )
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
         batch_size=batch_size,
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
+        pin_memory=True,
     )
     return train_loader, test_loader, val_loader, accuracy_loader
