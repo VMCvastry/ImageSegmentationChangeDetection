@@ -12,7 +12,7 @@ def get_dataloaders(
 
     data = DynamicEarthNet(root, binary_change_detection=binary_change_detection)
     data = torch.utils.data.Subset(data, range(int(subset_percentage * len(data))))
-    train_size = int(0.6 * len(data))
+    train_size = int(0.4 * len(data))
     test_size = len(data) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(
         data, [train_size, test_size], generator=torch.Generator().manual_seed(SEED)
