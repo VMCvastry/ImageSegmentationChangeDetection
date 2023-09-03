@@ -58,13 +58,13 @@ if __name__ == "__main__":
     criterion = torch.nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([float(WEIGHT_POSITIVE * 2)]).to(device)
     )
-    optimizer = torch.optim.SGD(
-        model.parameters(),
-        momentum=0.9,
-        lr=lr,
-        weight_decay=0.0001,
-    )
-    # optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # optimizer = torch.optim.SGD(
+    #     model.parameters(),
+    #     momentum=0.9,
+    #     lr=lr,
+    #     weight_decay=0.0001,
+    # )
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     trainer = Trainer(
         model=model,
         output_label=f"test_net_{str(uuid.uuid4())[0:8]}",

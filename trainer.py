@@ -61,6 +61,8 @@ class Trainer:
         total = 0
         total_proportional = 0
         positive = 0
+        a = 0
+        b = 0
         for x, label in loader:
             # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
             x = x.to(self.device)
@@ -75,7 +77,10 @@ class Trainer:
                 - label.count_nonzero()
             )
             if get_accuracy:
+                a += predicted_value.sum().item()
+                predicted_value = torch.sigmoid(predicted_value)
                 predicted_value = predicted_value > 0.5
+                b += predicted_value.sum().item()
                 correct_map = predicted_value == label
                 correct += correct_map.sum().item()
                 positive += label.sum().item()
@@ -85,7 +90,8 @@ class Trainer:
                 correct_proportional += (
                     (correct_map * (1 - label)).sum().item()
                 )  # Sum correct negative
-
+        # print(correct, total, correct_proportional, total_proportional)
+        logging.info(f"{a / total}, {b / total}")
         loss = np.mean(losses)
         return (
             loss,
