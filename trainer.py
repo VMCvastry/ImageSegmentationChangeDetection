@@ -63,7 +63,7 @@ class Trainer:
         for x, label in loader:
             # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
             x = x.to(self.device)
-            label = label.to(self.device)
+            label = label.to(self.device, dtype=torch.float32)
             predicted_value = self.model(x)
             loss = loss_fn(predicted_value, label)
             losses.append(loss.item())
