@@ -31,7 +31,7 @@ def get_dataloaders(
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
         pin_memory=True,
-        num_workers=6,
+        num_workers=4,
     )
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
@@ -39,7 +39,7 @@ def get_dataloaders(
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
         pin_memory=True,
-        num_workers=6,
+        num_workers=4,
     )
     accuracy_loader = torch.utils.data.DataLoader(
         data, batch_size=512, shuffle=True, pin_memory=True
@@ -50,6 +50,6 @@ def get_dataloaders(
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
         pin_memory=True,
-        num_workers=6,
+        num_workers=4,
     )
     return train_loader, test_loader, val_loader, accuracy_loader
