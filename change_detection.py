@@ -12,6 +12,8 @@ from trainer import Trainer
 import logging
 import sys
 
+from unet_detection.simple_unet import ChangeDetectionNet
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter(
@@ -37,7 +39,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset_location", type=str, default="./DynamicEarthNet_reduced"
     )
-    parser.add_argument("--net_reduction", type=int, default=32)
+    parser.add_argument("--net_reduction", type=int, default=64)
+    parser.add_argument("--net", type=str, default="sunet")
+    parser.add_argument("--val_accuracy", type=bool, default=True)
+
     args = parser.parse_args()
     batch_size = args.bs
     epochs = args.epochs
@@ -45,6 +50,7 @@ if __name__ == "__main__":
     subset_percentage = args.subset
     dataset_location = args.dataset_location
     net_reduction = args.net_reduction
+    net = args.net
     logging.info(f"Parsed args: {args}")
 
     train_loader, test_loader, val_loader, accuracy_loader = get_dataloaders(
@@ -54,7 +60,10 @@ if __name__ == "__main__":
         subset_percentage=subset_percentage,
     )
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UNet(8, 1, reduction_factor=net_reduction)
+    if net == "unet":
+        model = UNet(8, 1, reduction_factor=net_reduction)
+    else:
+        model = ChangeDetectionNet()
     criterion = torch.nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([float(WEIGHT_POSITIVE * 2)]).to(device)
     )
@@ -71,6 +80,7 @@ if __name__ == "__main__":
         load_model="",
         loss_fn=criterion,
         optimizer=optimizer,
+        val_accuracy=args.val_accuracy,
     )
     trainer.test(test_loader)
 

@@ -6,6 +6,7 @@ from datetime import datetime
 from torch import optim
 from matplotlib import pyplot as plt
 import logging
+from sklearn.metrics import f1_score
 
 from constants import WEIGHT_POSITIVE
 
@@ -19,6 +20,7 @@ class Trainer:
         load_model: str = None,
         loss_fn=None,
         optimizer=None,
+        val_accuracy=True,
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logging.info(f"Using device: {self.device}")
@@ -33,6 +35,7 @@ class Trainer:
         self.output_label = output_label
         self.train_losses = []
         self.validation_losses = []
+        self.val_accuracy = val_accuracy
 
     def train_step(
         self,
@@ -63,6 +66,8 @@ class Trainer:
         positive = 0
         a = 0
         b = 0
+        f1 = 0
+        f1_c = 0
         for x, label in loader:
             # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
             x = x.to(self.device)
@@ -70,13 +75,14 @@ class Trainer:
             predicted_value = self.model(x)
             loss = loss_fn(predicted_value, label)
             losses.append(loss.item())
-            total += label.size(0) * label.size(1) * label.size(2)
-            total_proportional += (  # POS * weight + NEG
-                label.count_nonzero() * WEIGHT_POSITIVE
-                + label.size(0) * label.size(1) * label.size(2)
-                - label.count_nonzero()
-            )
+
             if get_accuracy:
+                total += label.size(0) * label.size(1) * label.size(2)
+                total_proportional += (  # POS * weight + NEG
+                    label.count_nonzero() * WEIGHT_POSITIVE
+                    + label.size(0) * label.size(1) * label.size(2)
+                    - label.count_nonzero()
+                )
                 a += predicted_value.sum().item()
                 predicted_value = torch.sigmoid(predicted_value)
                 predicted_value = predicted_value > 0.5
@@ -90,8 +96,19 @@ class Trainer:
                 correct_proportional += (
                     (correct_map * (1 - label)).sum().item()
                 )  # Sum correct negative
-        # print(correct, total, correct_proportional, total_proportional)
-        logging.info(f"{a / total}, {b / total}")
+                f1_t = f1_score(
+                    label.numpy().flatten(),
+                    predicted_value.numpy().flatten(),
+                    zero_division=np.nan,
+                )
+                if f1_t >= 0:
+                    f1 += f1_t
+                    f1_c += 1
+        if get_accuracy:
+            # logging.info(f"{correct / total}{correct_proportional / total_proportional}")
+            logging.info(f"{a / total}, {b / total}")
+            if f1_c > 0:
+                logging.info(f"F1: {f1 / f1_c}, {f1_c}/{len(loader)}")
         loss = np.mean(losses)
         return (
             loss,
@@ -122,7 +139,7 @@ class Trainer:
 
             with torch.no_grad():
                 validation_loss, accuracy, accuracy2, positive = self.batch_eval_cycle(
-                    val_loader, get_accuracy=True
+                    val_loader, get_accuracy=self.val_accuracy
                 )
                 self.validation_losses.append(validation_loss)
             if True | (epoch <= 10) | (epoch % 50 == 0) | (epoch == n_epochs):
