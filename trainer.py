@@ -99,9 +99,9 @@ class Trainer:
                 f1_t = f1_score(
                     label.cpu().numpy().flatten(),
                     predicted_value.cpu().numpy().flatten(),
-                    zero_division=np.nan,
+                    zero_division=0,
                 )
-                if f1_t >= 0:
+                if f1_t > 0:
                     f1 += f1_t
                     f1_c += 1
         if get_accuracy:
