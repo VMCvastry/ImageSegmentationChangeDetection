@@ -97,8 +97,8 @@ class Trainer:
                     (correct_map * (1 - label)).sum().item()
                 )  # Sum correct negative
                 f1_t = f1_score(
-                    label.numpy().flatten(),
-                    predicted_value.numpy().flatten(),
+                    label.cpu().numpy().flatten(),
+                    predicted_value.cpu().numpy().flatten(),
                     zero_division=np.nan,
                 )
                 if f1_t >= 0:
