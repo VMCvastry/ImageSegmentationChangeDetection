@@ -13,6 +13,7 @@ import logging
 import sys
 
 from unet_detection.simple_unet import ChangeDetectionNet
+from unet_detection.simple_unet2 import SimpleUNet2
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -40,7 +41,7 @@ if __name__ == "__main__":
         "--dataset_location", type=str, default="./DynamicEarthNet_reduced"
     )
     parser.add_argument("--net_reduction", type=int, default=64)
-    parser.add_argument("--net", type=str, default="sunet")
+    parser.add_argument("--net", type=str, default="sunet2")
     parser.add_argument("--val_accuracy", type=bool, default=True)
 
     args = parser.parse_args()
@@ -62,8 +63,11 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if net == "unet":
         model = UNet(8, 1, reduction_factor=net_reduction)
-    else:
+    elif net == "sunet":
         model = ChangeDetectionNet()
+
+    else:
+        model = SimpleUNet2()
     criterion = torch.nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([float(WEIGHT_POSITIVE * 2)]).to(device)
     )
