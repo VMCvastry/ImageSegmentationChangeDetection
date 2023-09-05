@@ -7,6 +7,7 @@ import argparse
 
 from constants import WEIGHT_POSITIVE
 from dataset import get_dataloaders
+from dataset.dataset_utils import balance_dataset
 from unet_detection import UNet
 from trainer import Trainer
 import logging
@@ -72,8 +73,14 @@ if __name__ == "__main__":
         model = SimpleUNet3()
     else:
         raise ValueError("Invalid net name")
+
+    weight = WEIGHT_POSITIVE
+    weight = balance_dataset(
+        None, torch.cat([label for img, label in train_loader.dataset]), True
+    )
+    logging.info(f"Weight: {weight}")
     criterion = torch.nn.BCEWithLogitsLoss(
-        pos_weight=torch.tensor([float(WEIGHT_POSITIVE)]).to(device)
+        pos_weight=torch.tensor([float(weight)]).to(device)
     )
     # optimizer = torch.optim.SGD(
     #     model.parameters(),
@@ -88,7 +95,7 @@ if __name__ == "__main__":
         load_model="",
         loss_fn=criterion,
         optimizer=optimizer,
-        val_accuracy=args.val_accuracy,
+        val_accuracy=args.val_accuracy == 1,
     )
     trainer.test(test_loader)
 

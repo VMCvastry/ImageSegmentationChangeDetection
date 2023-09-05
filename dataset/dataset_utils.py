@@ -136,6 +136,7 @@ def balance_dataset(imgs, labels, binary):
     logging.info(
         f"Positive labels: {labels_positive}/{labels_negative}, {labels_positive *100 / (labels_negative + labels_positive)}"
     )
+    return labels_negative / labels_positive
 
 
 if __name__ == "__main__":

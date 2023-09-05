@@ -35,8 +35,8 @@ def get_dataloaders(
         num_workers=4,
     )
     balance_dataset(None, torch.cat([label for img, label in train_dataset]), True)
-    balance_dataset(None, torch.cat([label for img, label in test_dataset]), True)
     balance_dataset(None, torch.cat([label for img, label in val_dataset]), True)
+    balance_dataset(None, torch.cat([label for img, label in test_dataset]), True)
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=batch_size,
