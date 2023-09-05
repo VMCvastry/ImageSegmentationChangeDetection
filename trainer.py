@@ -159,7 +159,7 @@ class Trainer:
             epoch_time = datetime.now()
             with torch.no_grad():
                 validation_loss, accuracy, accuracy2, positive = self.batch_eval_cycle(
-                    val_loader, get_accuracy=self.val_accuracy
+                    val_loader, get_accuracy=epoch % 5 == 0
                 )
                 self.validation_losses.append(validation_loss)
             if True | (epoch <= 10) | (epoch % 50 == 0) | (epoch == n_epochs):

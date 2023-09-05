@@ -97,7 +97,7 @@ if __name__ == "__main__":
         optimizer=optimizer,
         val_accuracy=args.val_accuracy == 1,
     )
-    trainer.test(test_loader)
+    # trainer.test(test_loader)
 
     trainer.train(
         train_loader, val_loader, batch_size=None, n_epochs=epochs, n_features=None
