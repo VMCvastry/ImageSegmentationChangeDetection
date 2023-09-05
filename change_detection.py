@@ -43,7 +43,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--net_reduction", type=int, default=64)
     parser.add_argument("--net", type=str, default="sunet2")
-    parser.add_argument("--val_accuracy", type=bool, default=True)
+    parser.add_argument("--val_accuracy", type=int, default=1)
 
     args = parser.parse_args()
     batch_size = args.bs
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     else:
         raise ValueError("Invalid net name")
     criterion = torch.nn.BCEWithLogitsLoss(
-        pos_weight=torch.tensor([float(WEIGHT_POSITIVE * 2)]).to(device)
+        pos_weight=torch.tensor([float(WEIGHT_POSITIVE)]).to(device)
     )
     # optimizer = torch.optim.SGD(
     #     model.parameters(),
