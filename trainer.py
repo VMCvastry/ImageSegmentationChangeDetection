@@ -156,7 +156,8 @@ class Trainer:
                 batch_losses.append(loss)
             training_loss = np.mean(batch_losses)
             self.train_losses.append(training_loss)
-
+            train_time = datetime.now() - epoch_time
+            epoch_time = datetime.now()
             with torch.no_grad():
                 validation_loss, accuracy, accuracy2, positive = self.batch_eval_cycle(
                     val_loader, get_accuracy=self.val_accuracy
@@ -164,7 +165,7 @@ class Trainer:
                 self.validation_losses.append(validation_loss)
             if True | (epoch <= 10) | (epoch % 50 == 0) | (epoch == n_epochs):
                 logging.info(
-                    f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t Validation loss: {validation_loss:.4f}, Accuracy: {accuracy*100:.2f}%, Accuracy (Proportional): {accuracy2*100:.2f}%, Positive {positive*100:.2f}%,{datetime.now()}, epoch time {datetime.now() - epoch_time}"
+                    f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t Validation loss: {validation_loss:.4f}, Accuracy: {accuracy*100:.2f}%, Accuracy (Proportional): {accuracy2*100:.2f}%, Positive {positive*100:.2f}%,{datetime.now()}, val time {datetime.now() - epoch_time}, train time {train_time}, total time {datetime.now() - epoch_time + train_time} "
                 )
             epoch_time = datetime.now()
         logging.info(
