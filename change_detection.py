@@ -14,6 +14,7 @@ import sys
 
 from unet_detection.simple_unet import ChangeDetectionNet
 from unet_detection.simple_unet2 import SimpleUNet2
+from unet_detection.simple_unet3 import SimpleUNet3
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -65,9 +66,12 @@ if __name__ == "__main__":
         model = UNet(8, 1, reduction_factor=net_reduction)
     elif net == "sunet":
         model = ChangeDetectionNet()
-
-    else:
+    elif net == "sunet2":
         model = SimpleUNet2()
+    elif net == "sunet3":
+        model = SimpleUNet3()
+    else:
+        raise ValueError("Invalid net name")
     criterion = torch.nn.BCEWithLogitsLoss(
         pos_weight=torch.tensor([float(WEIGHT_POSITIVE * 2)]).to(device)
     )
