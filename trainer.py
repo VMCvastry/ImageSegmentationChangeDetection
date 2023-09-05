@@ -59,78 +59,85 @@ class Trainer:
             loss_fn = self.loss_fn
         losses = []
         self.model.eval()
-        correct = 0
+
         correct_proportional = 0
-        total = 0
-        total_proportional = 0
         positive = 0
         a = 0
         b = 0
         c = 0
+
+        total_loss = 0
+        correct = 0
+        total = 0
+        total_proportional = 0
         f1 = 0
         f1_c = 0
-
         TP = 0
         TN = 0
         FP = 0
         FN = 0
         for x, label in loader:
-            # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
-            x = x.to(self.device)
-            label = label.to(self.device, dtype=torch.float32)
+            x, label = x.to(self.device), label.to(self.device, dtype=torch.float32)
+
             predicted_value = self.model(x)
             loss = loss_fn(predicted_value, label)
-            losses.append(loss.item())
+            total_loss += loss.item() * x.size(0)  # batch size
 
             if get_accuracy:
-                total += label.size(0) * label.size(1) * label.size(2)
-                total_proportional += (  # POS * weight + NEG
-                    label.count_nonzero() * WEIGHT_POSITIVE
-                    + label.size(0) * label.size(1) * label.size(2)
-                    - label.count_nonzero()
-                )
+                flat_label = label.view(-1)
                 a += predicted_value.sum().item()
-                predicted_value = torch.sigmoid(predicted_value)
+                predicted_value = torch.sigmoid(predicted_value).view(-1)
                 b += predicted_value.sum().item()
                 predicted_value = predicted_value > 0.5
                 c += predicted_value.sum().item()
-                correct_map = predicted_value == label
+                correct_map = predicted_value == flat_label
                 correct += correct_map.sum().item()
-                positive += label.sum().item()
+
+                batch_positive = flat_label.sum().item()
+                positive += batch_positive
+
+                total_proportional += (  # POS * weight + NEG
+                    batch_positive * WEIGHT_POSITIVE
+                    + flat_label.size(0)
+                    - batch_positive
+                )
                 correct_proportional += (  # Sum correct positive
-                    correct_map * label
+                    correct_map * flat_label
                 ).sum().item() * WEIGHT_POSITIVE
                 correct_proportional += (
-                    (correct_map * (1 - label)).sum().item()
+                    (correct_map & (flat_label == 0)).sum().item()
                 )  # Sum correct negative
+
+                TP += ((predicted_value == 1) & (flat_label == 1)).float().sum()
+                TN += ((predicted_value == 0) & (flat_label == 0)).float().sum()
+                FP += ((predicted_value == 1) & (flat_label == 0)).float().sum()
+                FN += ((predicted_value == 0) & (flat_label == 1)).float().sum()
+
                 f1_t = f1_score(
-                    label.cpu().numpy().flatten(),
-                    predicted_value.cpu().numpy().flatten(),
+                    flat_label.cpu().numpy(),
+                    predicted_value.cpu().numpy(),
                     zero_division=0,
                 )
-                TP += ((predicted_value == 1) & (label == 1)).float().sum()
-                TN += ((predicted_value == 0) & (label == 0)).float().sum()
-                FP += ((predicted_value == 1) & (label == 0)).float().sum()
-                FN += ((predicted_value == 0) & (label == 1)).float().sum()
 
                 if f1_t > 0:
                     f1 += f1_t
                     f1_c += 1
+
+                total += flat_label.size(0)
             # break
 
         TPR = TP / (TP + FN) if TP + FN != 0 else 0
         TNR = TN / (TN + FP) if TN + FP != 0 else 0
         FPR = FP / (FP + TN) if FP + TN != 0 else 0
         FNR = FN / (FN + TP) if FN + TP != 0 else 0
+
         if get_accuracy:
-            # logging.info(f"{correct / total}{correct_proportional / total_proportional}")
             logging.info(f"{a / total}, {b / total}, {c / total}")
             logging.info(f"TPR: {TPR}, TNR: {TNR}, FPR: {FPR}, FNR: {FNR}")
             if f1_c > 0:
                 logging.info(f"F1: {f1 / f1_c}, {f1_c}/{len(loader)}")
-        loss = np.mean(losses)
         return (
-            loss,
+            total_loss / total,
             correct / total if get_accuracy else -1,
             correct_proportional / total_proportional if get_accuracy else -1,
             positive / total if get_accuracy else -1,
@@ -159,7 +166,7 @@ class Trainer:
             epoch_time = datetime.now()
             with torch.no_grad():
                 validation_loss, accuracy, accuracy2, positive = self.batch_eval_cycle(
-                    val_loader, get_accuracy=epoch % 5 == 0
+                    val_loader, get_accuracy=epoch % 5 == 0 or self.val_accuracy
                 )
                 self.validation_losses.append(validation_loss)
             if True | (epoch <= 10) | (epoch % 50 == 0) | (epoch == n_epochs):
