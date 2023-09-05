@@ -81,7 +81,7 @@ class Trainer:
 
             predicted_value = self.model(x)
             loss = loss_fn(predicted_value, label)
-            total_loss += loss.item() * x.size(0)  # batch size
+            total_loss += loss.item()
 
             if get_accuracy:
                 flat_label = label.view(-1)
@@ -137,7 +137,7 @@ class Trainer:
             if f1_c > 0:
                 logging.info(f"F1: {f1 / f1_c}, {f1_c}/{len(loader)}")
         return (
-            total_loss / total,
+            total_loss / len(loader),
             correct / total if get_accuracy else -1,
             correct_proportional / total_proportional if get_accuracy else -1,
             positive / total if get_accuracy else -1,
