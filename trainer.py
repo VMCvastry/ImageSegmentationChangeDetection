@@ -66,8 +66,14 @@ class Trainer:
         positive = 0
         a = 0
         b = 0
+        c = 0
         f1 = 0
         f1_c = 0
+
+        TP = 0
+        TN = 0
+        FP = 0
+        FN = 0
         for x, label in loader:
             # x_val = x_val.view([batch_size, -1, n_features]).to(self.device)
             x = x.to(self.device)
@@ -85,8 +91,9 @@ class Trainer:
                 )
                 a += predicted_value.sum().item()
                 predicted_value = torch.sigmoid(predicted_value)
-                predicted_value = predicted_value > 0.5
                 b += predicted_value.sum().item()
+                predicted_value = predicted_value > 0.5
+                c += predicted_value.sum().item()
                 correct_map = predicted_value == label
                 correct += correct_map.sum().item()
                 positive += label.sum().item()
@@ -101,12 +108,25 @@ class Trainer:
                     predicted_value.cpu().numpy().flatten(),
                     zero_division=0,
                 )
+                TP += ((predicted_value == 1) & (label == 1)).float().sum()
+                TN += ((predicted_value == 0) & (label == 0)).float().sum()
+                FP += ((predicted_value == 1) & (label == 0)).float().sum()
+                FN += ((predicted_value == 0) & (label == 1)).float().sum()
+
                 if f1_t > 0:
                     f1 += f1_t
                     f1_c += 1
+            # break
+        TP, TN, FP, FN = TP.item(), TN.item(), FP.item(), FN.item()
+
+        TPR = TP / (TP + FN) if TP + FN != 0 else 0
+        TNR = TN / (TN + FP) if TN + FP != 0 else 0
+        FPR = FP / (FP + TN) if FP + TN != 0 else 0
+        FNR = FN / (FN + TP) if FN + TP != 0 else 0
         if get_accuracy:
             # logging.info(f"{correct / total}{correct_proportional / total_proportional}")
-            logging.info(f"{a / total}, {b / total}")
+            logging.info(f"{a / total}, {b / total}, {c / total}")
+            logging.info(f"TPR: {TPR}, TNR: {TNR}, FPR: {FPR}, FNR: {FNR}")
             if f1_c > 0:
                 logging.info(f"F1: {f1 / f1_c}, {f1_c}/{len(loader)}")
         loss = np.mean(losses)
