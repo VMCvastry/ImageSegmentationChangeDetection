@@ -117,7 +117,6 @@ class Trainer:
                     f1 += f1_t
                     f1_c += 1
             # break
-        TP, TN, FP, FN = TP.item(), TN.item(), FP.item(), FN.item()
 
         TPR = TP / (TP + FN) if TP + FN != 0 else 0
         TNR = TN / (TN + FP) if TN + FP != 0 else 0
