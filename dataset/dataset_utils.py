@@ -129,9 +129,13 @@ def detect_data(root) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
 def balance_dataset(imgs, labels, binary):
     if not binary:
         raise NotImplementedError
-    labels_positive = sum(labels)
-    labels_negative = len(labels) - labels_positive
-    logging.info(f"Positive labels: {labels_positive}/{labels_negative}")
+    labels_np = labels.numpy()
+    labels_positive = labels_np.sum()
+    labels_negative = labels_np.size - labels_positive
+
+    logging.info(
+        f"Positive labels: {labels_positive}/{labels_negative}, {labels_positive *100 / (labels_negative + labels_positive)}"
+    )
 
 
 if __name__ == "__main__":

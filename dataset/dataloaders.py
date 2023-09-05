@@ -1,6 +1,7 @@
 import torch
 import torch.utils.data
 from dataset import DynamicEarthNet
+from dataset.dataset_utils import balance_dataset
 
 SEED = 42
 
@@ -33,6 +34,9 @@ def get_dataloaders(
         pin_memory=True,
         num_workers=4,
     )
+    balance_dataset(None, torch.cat([label for img, label in train_dataset]), True)
+    balance_dataset(None, torch.cat([label for img, label in test_dataset]), True)
+    balance_dataset(None, torch.cat([label for img, label in val_dataset]), True)
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=batch_size,
