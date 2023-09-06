@@ -46,11 +46,12 @@ def show_confusion_image(pred: np.array, label: np.array):
     tn = np.logical_and(pred == 0, label == 0)
     fp = np.logical_and(pred == 1, label == 0)
     fn = np.logical_and(pred == 0, label == 1)
-    print(
-        tp.sum() / (h * w) * 100,
-        tn.sum() / (h * w) * 100,
-        fp.sum() / (h * w) * 100,
-        fn.sum() / (h * w) * 100,
+
+    logging.info(
+        f"tp: {tp.sum() / (h * w) * 100:.2f}%, "
+        f"tn: {tn.sum() / (h * w) * 100:.2f}%, "
+        f"fp: {fp.sum() / (h * w) * 100:.2f}%, "
+        f"fn: {fn.sum() / (h * w) * 100:.2f}%"
     )
 
     # Color TP, TN, FP, FN differently
@@ -94,8 +95,6 @@ def getTrainer(
     trainer = Trainer(
         model=model,
         output_label=f"{net}${str(uuid.uuid4())[0:8]}",
-        # load_model="test_net_2c9a4e6b_2023-09-05_06-04-50",
-        # load_model="test_net_c18b5927_2023-09-05_23-15-49",
         load_model=load_model,
         loss_fn=criterion,
         optimizer=optimizer,

@@ -86,4 +86,4 @@ class EUNet(nn.Module):
         x = self.dec1(x, skip1)
 
         # Final Convolution
-        return self.final_conv(x)
+        return self.final_conv(x).squeeze(1)

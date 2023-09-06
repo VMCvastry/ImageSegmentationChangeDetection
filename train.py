@@ -48,7 +48,8 @@ if __name__ == "__main__":
     net = args.net
     val_accuracy = args.val_accuracy
     logging.info(f"Parsed args: {args}")
-
+    SEED = 42
+    torch.manual_seed(SEED)
     train_loader, test_loader, val_loader, accuracy_loader = get_dataloaders(
         dataset_location,
         batch_size=batch_size,

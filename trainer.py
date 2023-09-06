@@ -196,7 +196,7 @@ class Trainer:
         return test_loss
 
     def poll(self, x):
-        x = x.unsqueeze(0).to(self.device)  # add batch dimension
+        x = x.to(self.device)
         with torch.no_grad():
             self.model.eval()
             value = self.model(x)

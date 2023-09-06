@@ -1,3 +1,5 @@
+import random
+
 import torch
 import argparse
 
@@ -30,16 +32,28 @@ if __name__ == "__main__":
     subset_percentage = 1
     dataset_location = "./DynamicEarthNet_reduced"
     net_reduction = 16
-    net = "unet"
+    net = "sunet3"
     val_accuracy = 1
-
+    SEED = random.randint(0, 100000)
+    logging.info(f"Seed: {SEED}")
+    torch.manual_seed(SEED)
     train_loader, test_loader, val_loader, accuracy_loader = get_dataloaders(
         dataset_location,
         batch_size=batch_size,
         binary_change_detection=True,
         subset_percentage=subset_percentage,
     )
-    trainer = getTrainer(net, net_reduction, lr, val_accuracy, weight=[10.0])
+
+    trainer = getTrainer(
+        net,
+        net_reduction,
+        lr,
+        val_accuracy,
+        weight=10.0,
+        # load_model="test_net_2c9a4e6b_2023-09-05_06-04-50",
+        # load_model="test_net_c18b5927_2023-09-05_23-15-49",
+        load_model="test_net_a07149d7_2023-09-06_02-48-22",
+    )
     # trainer.test(test_loader)
 
     # trainer.train(
@@ -47,13 +61,16 @@ if __name__ == "__main__":
     # )
     # trainer.plot_losses()
     # trainer.test(test_loader)
+    # torch.manual_seed(321214)
     for x, y in test_loader:
 
         pred = trainer.poll(x)
         pred = torch.sigmoid(pred)
         pred = pred > 0.5
-        print(pred.sum() / pred.numel(), y.sum() / y.numel())
-        print((pred == y).sum() / pred.numel())
 
+        logging.info(
+            f"label: {(y.sum() / y.numel()).item()*100:.2f}%, pred: {(pred.sum() / pred.numel()).item()*100:.2f}%"
+        )
+        logging.info(f"accuracy: {((pred == y).sum() / pred.numel()).item()*100:.2f}%")
         show_confusion_image(pred.squeeze(0).numpy(), y.squeeze(0).numpy())
         input()
