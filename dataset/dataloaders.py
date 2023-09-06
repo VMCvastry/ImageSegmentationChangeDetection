@@ -10,7 +10,7 @@ def get_dataloaders(
     root, batch_size=4, binary_change_detection=True, subset_percentage=1
 ):
     # TODO make split deterministic
-
+    torch.manual_seed(SEED)
     data = DynamicEarthNet(root, binary_change_detection=binary_change_detection)
     data = torch.utils.data.Subset(data, range(int(subset_percentage * len(data))))
     train_size = int(0.4 * len(data))
@@ -32,17 +32,18 @@ def get_dataloaders(
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
         pin_memory=True,
+        drop_last=True,
         num_workers=4,
     )
-    balance_dataset(None, torch.cat([label for img, label in train_dataset]), True)
-    balance_dataset(None, torch.cat([label for img, label in val_dataset]), True)
-    balance_dataset(None, torch.cat([label for img, label in test_dataset]), True)
+    # balance_dataset(None, torch.cat([label for img, label in val_dataset]), True)
+    # balance_dataset(None, torch.cat([label for img, label in test_dataset]), True)
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
         batch_size=batch_size,
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
-        pin_memory=True,
+        # pin_memory=True,
+        drop_last=True,
         num_workers=4,
     )
     accuracy_loader = torch.utils.data.DataLoader(
@@ -53,7 +54,8 @@ def get_dataloaders(
         batch_size=batch_size,
         shuffle=True,
         generator=torch.Generator().manual_seed(SEED),
-        pin_memory=True,
+        # pin_memory=True,
+        drop_last=True,
         num_workers=4,
     )
     return train_loader, test_loader, val_loader, accuracy_loader

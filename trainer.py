@@ -178,6 +178,7 @@ class Trainer:
             f"Training finished at {datetime.now()}, total time {datetime.now() - start_time}"
         )
         torch.save(self.model.state_dict(), f"models/{model_name}.pt")
+        plot_train_losses(self.train_losses, self.validation_losses, self.output_label)
         return model_name
 
     def test(self, test_loader):
@@ -194,18 +195,28 @@ class Trainer:
 
         return test_loss
 
-    def plot_losses(self):
-        plt.plot(self.train_losses, label="Training loss")
-        plt.plot(self.validation_losses, label="Validation loss")
-        plt.legend()
-        plt.title("Losses")
-        # plt.show()
-        plt.savefig(f"models/{self.output_label}_losses.png")
-        plt.close()
-
     def poll(self, x):
         x = x.unsqueeze(0).to(self.device)  # add batch dimension
         with torch.no_grad():
             self.model.eval()
             value = self.model(x)
         return value.squeeze(0)  # remove batch dimension
+
+
+def plot_train_losses(train_losses, validation_losses, output_label):
+    data_mean = np.mean(train_losses)
+    data_std = np.std(train_losses)
+    num_std = 2
+    min_value = data_mean - num_std * data_std
+    max_value = data_mean + num_std * data_std
+
+    plt.plot(np.clip(train_losses, min_value, max_value), label="Training loss")
+    plt.plot(
+        np.clip(validation_losses, min_value, max_value),
+        label="Validation loss",
+    )
+    plt.legend()
+    plt.title("Losses")
+    # plt.show()
+    plt.savefig(f"models/{output_label}_losses.png")
+    plt.close()
