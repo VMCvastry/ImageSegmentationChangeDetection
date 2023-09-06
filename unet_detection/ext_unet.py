@@ -51,23 +51,18 @@ class EUNet(nn.Module):
     def __init__(self, in_channels=8, out_channels=1):
         super().__init__()
 
-        # Encoder
-        self.enc1 = EncoderBlock(in_channels, 64)
-        self.enc2 = EncoderBlock(64, 128)
-        self.enc3 = EncoderBlock(128, 256)
-        # self.enc4 = EncoderBlock(256, 512)
+        self.enc1 = EncoderBlock(in_channels, 32)
+        self.enc2 = EncoderBlock(32, 64)
+        self.enc3 = EncoderBlock(64, 128)
 
-        # Bottleneck
-        self.bottleneck = DoubleConv(256, 512)
+        self.bottleneck = DoubleConv(128, 256)
 
-        # Decoder
-        # self.dec4 = DecoderBlock(1024, 512)
-        self.dec3 = DecoderBlock(512, 256)
-        self.dec2 = DecoderBlock(256, 128)
-        self.dec1 = DecoderBlock(128, 64)
+        self.dec3 = DecoderBlock(256, 128)
+        self.dec2 = DecoderBlock(128, 64)
+        self.dec1 = DecoderBlock(64, 32)
 
         # Final Convolution
-        self.final_conv = nn.Conv2d(64, out_channels, kernel_size=1)
+        self.final_conv = nn.Conv2d(32, out_channels, kernel_size=1)
 
     def forward(self, x):
         # Encoder
