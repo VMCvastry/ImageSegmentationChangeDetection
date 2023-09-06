@@ -37,6 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--net_reduction", type=int, default=16)
     parser.add_argument("--net", type=str, default="unet")
     parser.add_argument("--val_accuracy", type=int, default=1)
+    parser.add_argument("--load_model", type=str, default=None)
 
     args = parser.parse_args()
     batch_size = args.bs
@@ -47,6 +48,7 @@ if __name__ == "__main__":
     net_reduction = args.net_reduction
     net = args.net
     val_accuracy = args.val_accuracy
+    load_model = args.load_model
     logging.info(f"Parsed args: {args}")
     SEED = 42
     torch.manual_seed(SEED)
@@ -65,6 +67,7 @@ if __name__ == "__main__":
         lr,
         val_accuracy,
         weight,
+        load_model=load_model,
     )
     # trainer.test(test_loader)
 
