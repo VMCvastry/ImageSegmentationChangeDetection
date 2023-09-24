@@ -35,6 +35,7 @@ if __name__ == "__main__":
     net = "sunet3"
     val_accuracy = 1
     SEED = random.randint(0, 100000)
+    SEED = 42
     logging.info(f"Seed: {SEED}")
     torch.manual_seed(SEED)
     train_loader, test_loader, val_loader, accuracy_loader = get_dataloaders(
@@ -50,9 +51,12 @@ if __name__ == "__main__":
         lr,
         val_accuracy,
         weight=10.0,
-        # load_model="test_net_2c9a4e6b_2023-09-05_06-04-50",
-        # load_model="test_net_c18b5927_2023-09-05_23-15-49",
-        load_model="test_net_a07149d7_2023-09-06_02-48-22",
+        # load_model="test_net_2c9a4e6b_2023-09-05_06-04-50", # sunet2
+        # load_model="test_net_c18b5927_2023-09-05_23-15-49",  # unet 16
+        # load_model="test_net_a07149d7_2023-09-06_02-48-22", # sunet3
+        # load_model="eunet$ecc2d318_2023-09-06_06-44-37",  # eunet small
+        # load_model="eunet$653f3c92_2023-09-06_07-28-59",  # eunet 10% p1
+        load_model="eunet$506450b9_2023-09-06_18-31-01",  # eunet 10% p2
     )
     # trainer.test(test_loader)
 
@@ -63,6 +67,8 @@ if __name__ == "__main__":
     # trainer.test(test_loader)
     # torch.manual_seed(321214)
     for x, y in test_loader:
+        if (y.sum() / y.numel()).item() < 0.1:
+            continue
 
         pred = trainer.poll(x)
         pred = torch.sigmoid(pred)

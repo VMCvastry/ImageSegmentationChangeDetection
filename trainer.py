@@ -177,6 +177,8 @@ class Trainer:
         logging.info(
             f"Training finished at {datetime.now()}, total time {datetime.now() - start_time}"
         )
+        if "_v-" in model_name:
+            model_name, version = model_name.split("_v-")
         torch.save(self.model.state_dict(), f"models/{model_name}.pt")
         plot_train_losses(self.train_losses, self.validation_losses, self.output_label)
         return model_name
