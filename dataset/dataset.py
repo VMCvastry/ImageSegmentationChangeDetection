@@ -25,7 +25,7 @@ def get_label(files, root, binary_change_detection):
 
 
 class DynamicEarthNet(Dataset):
-    def __init__(self, root, binary_change_detection=True):
+    def __init__(self, root, binary_change_detection=True, n_patches=16):
         self.root = root
         self.binary_change_detection = binary_change_detection
         self.normalize = transforms.Normalize(
@@ -35,25 +35,26 @@ class DynamicEarthNet(Dataset):
         images_sources, labels_sources = detect_data(root)
         self.img_pairs, self.label_pairs = get_pairs(images_sources, labels_sources)
         print(f"Found {len(self.img_pairs)} pairs of images and labels")
+        self.n_patches = n_patches
         # self.img_pairs, self.labels = balance_dataset(
         #     self.img_pairs, self.labels, self.binary_change_detection
         # )
 
     def __len__(self):
-        return len(self.img_pairs) * 16
+        return len(self.img_pairs) * self.n_patches
 
     def __getitem__(self, index):
-        pair_index = index // 16  # find which pair the index corresponds to
+        pair_index = index // self.n_patches  # find which pair the index corresponds to
         patch_number = (
-            index % 16
+            index % self.n_patches
         )  # find which patch of the pair the index corresponds to
 
         img1 = load_img(self.img_pairs[pair_index][0])
         img2 = load_img(self.img_pairs[pair_index][1])
         label_files = self.label_pairs[pair_index]
 
-        img1 = get_patch(img1, patch_number, 16)
-        img2 = get_patch(img2, patch_number, 16)
+        img1 = get_patch(img1, patch_number, self.n_patches)
+        img2 = get_patch(img2, patch_number, self.n_patches)
         img = np.concatenate(
             (img1, img2), axis=2
         )  # WxHx8    8=(4+4)   W=H=1024/n_patches
@@ -62,7 +63,7 @@ class DynamicEarthNet(Dataset):
         img = self.normalize(img)
 
         label = get_label(label_files, self.root, self.binary_change_detection)
-        label = get_patch(label, patch_number, 16)
+        label = get_patch(label, patch_number, self.n_patches)
         # if not self.binary_change_detection:
         #     label = get_one_hot_from_mask(label)
         label = torch.from_numpy(np.array(label, dtype=np.float32))  # why float?

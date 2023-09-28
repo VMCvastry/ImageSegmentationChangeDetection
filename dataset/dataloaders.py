@@ -4,10 +4,12 @@ from dataset import DynamicEarthNet
 
 
 def get_dataloaders(
-    root, batch_size=4, binary_change_detection=True, subset_percentage=1
+    root, batch_size=4, binary_change_detection=True, subset_percentage=1, n_patches=16
 ):
     # TODO make split deterministic
-    data = DynamicEarthNet(root, binary_change_detection=binary_change_detection)
+    data = DynamicEarthNet(
+        root, binary_change_detection=binary_change_detection, n_patches=n_patches
+    )
     data = torch.utils.data.Subset(data, range(int(subset_percentage * len(data))))
     train_size = int(0.4 * len(data))
     test_size = len(data) - train_size

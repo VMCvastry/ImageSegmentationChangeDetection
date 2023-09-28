@@ -57,10 +57,9 @@ if __name__ == "__main__":
         batch_size=batch_size,
         binary_change_detection=True,
         subset_percentage=subset_percentage,
+        n_patches=4,
     )
-    weight = balance_dataset(
-        None, torch.cat([label for img, label in train_loader.dataset]), True
-    )
+    weight = balance_dataset(train_loader, True)
     trainer = getTrainer(
         net,
         net_reduction,

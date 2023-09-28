@@ -5,6 +5,7 @@ import numpy as np
 import rasterio
 from constants import mean_dataset, std_dataset
 from utils import print_dataset_image
+import torch
 
 
 def unnormalize_img(img):
@@ -31,11 +32,12 @@ def get_pairs(imgs: dict, labels: dict):
         assert key in labels.keys()
         im = sorted(imgs[key])
         l = sorted(labels[key])
+        skip = len(im) > 4
         for i, (img, label) in enumerate(zip(im, l)):
-            if i % 4 != 0:
+            if skip and i % 4 != 0:
                 continue
             for j, (img2, label2) in enumerate(zip(im, l)):
-                if j % 4 != 0:
+                if skip and (j + 1) % 4 != 0:
                     continue
                 img_pairs.append((img, img2))
                 label_pairs.append((label, label2))
@@ -137,12 +139,18 @@ def detect_data(root) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     return images_sources, labels_sources
 
 
-def balance_dataset(imgs, labels, binary):
+def balance_dataset(train_loader, binary):
     if not binary:
         raise NotImplementedError
-    labels_np = labels.numpy()
-    labels_positive = labels_np.sum()
-    labels_negative = labels_np.size - labels_positive
+
+    labels_positive = 0
+    total_elements = 0
+
+    for _, label in train_loader.dataset:
+        labels_positive += torch.sum(label == 1).item()
+        total_elements += torch.numel(label)
+
+    labels_negative = total_elements - labels_positive
 
     logging.info(
         f"Positive labels: {labels_positive}/{labels_negative}, {labels_positive *100 / (labels_negative + labels_positive)}"
