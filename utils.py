@@ -94,7 +94,7 @@ def getTrainer(
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     trainer = Trainer(
         model=model,
-        output_label=f"{net}${str(uuid.uuid4())[0:8]}",
+        output_label=f"p_{net}${str(uuid.uuid4())[0:8]}",
         load_model=load_model,
         loss_fn=criterion,
         optimizer=optimizer,

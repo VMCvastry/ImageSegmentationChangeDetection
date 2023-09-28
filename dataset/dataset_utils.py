@@ -54,6 +54,17 @@ def load_img(path, show=False):
     # return np.expand_dims(np.asarray(image, dtype=np.float32), axis=0)
 
 
+def get_patch(image, patch_number, n=16):
+    patches_per_side = int(n**0.5)
+    patch_size = image.shape[0] // patches_per_side
+
+    row = (patch_number // patches_per_side) * patch_size  # Row start index
+    col = (patch_number % patches_per_side) * patch_size  # Col start index
+
+    patch = image[row : row + patch_size, col : col + patch_size]
+    return patch
+
+
 def get_img_files(path):
     zones = os.listdir(path)
     images = {}

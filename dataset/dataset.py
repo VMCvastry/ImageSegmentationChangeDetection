@@ -11,6 +11,7 @@ from .dataset_utils import (
     get_computed_labels_files,
     get_one_hot_from_mask,
     balance_dataset,
+    get_patch,
 )
 from utils import print_mask
 
@@ -39,17 +40,29 @@ class DynamicEarthNet(Dataset):
         # )
 
     def __len__(self):
-        return len(self.img_pairs)
+        return len(self.img_pairs) * 16
 
     def __getitem__(self, index):
-        img1 = load_img(self.img_pairs[index][0])
-        img2 = load_img(self.img_pairs[index][1])
-        img = np.concatenate((img1, img2), axis=2)  # 1024x1024x8    8=(4+4)
-        img = np.transpose(img, (2, 0, 1))  # 8x1024x1024
+        pair_index = index // 16  # find which pair the index corresponds to
+        patch_number = (
+            index % 16
+        )  # find which patch of the pair the index corresponds to
+
+        img1 = load_img(self.img_pairs[pair_index][0])
+        img2 = load_img(self.img_pairs[pair_index][1])
+        label_files = self.label_pairs[pair_index]
+
+        img1 = get_patch(img1, patch_number, 16)
+        img2 = get_patch(img2, patch_number, 16)
+        img = np.concatenate(
+            (img1, img2), axis=2
+        )  # WxHx8    8=(4+4)   W=H=1024/n_patches
+        img = np.transpose(img, (2, 0, 1))  # 8xWxH
         img = torch.from_numpy(np.array(img, dtype=np.float32))
         img = self.normalize(img)
-        label_files = self.label_pairs[index]
+
         label = get_label(label_files, self.root, self.binary_change_detection)
+        label = get_patch(label, patch_number, 16)
         # if not self.binary_change_detection:
         #     label = get_one_hot_from_mask(label)
         label = torch.from_numpy(np.array(label, dtype=np.float32))  # why float?
