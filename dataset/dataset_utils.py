@@ -32,11 +32,11 @@ def get_pairs(imgs: dict, labels: dict):
         im = sorted(imgs[key])
         l = sorted(labels[key])
         for i, (img, label) in enumerate(zip(im, l)):
-            # if i % 12 != 0:
-            #     continue
+            if i % 4 != 0:
+                continue
             for j, (img2, label2) in enumerate(zip(im, l)):
-                # if j % 12 != 0:
-                #     continue
+                if j % 4 != 0:
+                    continue
                 img_pairs.append((img, img2))
                 label_pairs.append((label, label2))
 
