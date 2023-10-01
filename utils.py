@@ -77,7 +77,12 @@ def getTrainer(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if load_model:
         if "$" in load_model:
-            new_net = load_model.split("$")[0]
+            params = load_model.split("$")[0]
+            params = params.split("_")
+            if len(params) == 1:
+                new_net = params[0]
+            else:
+                new_net = params[1]
             logging.info(f"Changing net from {net} to {new_net}")
             net = new_net
     model = get_model(net, net_reduction)
