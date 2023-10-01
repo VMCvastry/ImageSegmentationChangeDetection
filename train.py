@@ -38,6 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("--net", type=str, default="unet")
     parser.add_argument("--val_accuracy", type=int, default=1)
     parser.add_argument("--load_model", type=str, default=None)
+    parser.add_argument("--n-patches", type=int, default=4)
 
     args = parser.parse_args()
     batch_size = args.bs
@@ -49,6 +50,7 @@ if __name__ == "__main__":
     net = args.net
     val_accuracy = args.val_accuracy
     load_model = args.load_model
+    n_patches = args.n_patches
     logging.info(f"Parsed args: {args}")
     SEED = 42
     torch.manual_seed(SEED)
@@ -57,7 +59,7 @@ if __name__ == "__main__":
         batch_size=batch_size,
         binary_change_detection=True,
         subset_percentage=subset_percentage,
-        n_patches=4,
+        n_patches=n_patches,
     )
     weight = balance_dataset(train_loader, True)
     trainer = getTrainer(

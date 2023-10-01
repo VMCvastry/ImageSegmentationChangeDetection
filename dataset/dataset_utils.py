@@ -6,6 +6,7 @@ import rasterio
 from constants import mean_dataset, std_dataset
 from utils import print_dataset_image
 import torch
+from constants import SKIP_FACTOR
 
 
 def unnormalize_img(img):
@@ -34,10 +35,10 @@ def get_pairs(imgs: dict, labels: dict):
         l = sorted(labels[key])
         skip = len(im) > 4
         for i, (img, label) in enumerate(zip(im, l)):
-            if skip and i % 4 != 0:
+            if skip and i % SKIP_FACTOR != 0:
                 continue
             for j, (img2, label2) in enumerate(zip(im, l)):
-                if skip and (j + 1) % 4 != 0:
+                if skip and (j + 1) % SKIP_FACTOR != 0:
                     continue
                 img_pairs.append((img, img2))
                 label_pairs.append((label, label2))
