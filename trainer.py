@@ -21,14 +21,20 @@ class Trainer:
         loss_fn=None,
         optimizer=None,
         val_accuracy=True,
+        binary_change_detection=True,
     ):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logging.info(f"Using device: {self.device}")
         model = model.to(self.device)
         if load_model:
-            model.load_state_dict(
-                torch.load(f"models/{load_model}.pt", map_location=self.device)
-            )
+            if binary_change_detection:
+                model.load_state_dict(
+                    torch.load(f"models/{load_model}.pt", map_location=self.device)
+                )
+            else:
+                model.load_state_dict(
+                    torch.load(f"models_seg/{load_model}.pt", map_location=self.device)
+                )
         self.model = model
         self.loss_fn = loss_fn
         self.optimizer = optimizer
@@ -36,6 +42,7 @@ class Trainer:
         self.train_losses = []
         self.validation_losses = []
         self.val_accuracy = val_accuracy
+        self.binary_change_detection = binary_change_detection
 
     def train_step(
         self,
@@ -143,6 +150,44 @@ class Trainer:
             positive / total if get_accuracy else -1,
         )
 
+    def batch_eval_cycle_seg(self, loader, loss_fn=None, get_accuracy=False):
+        if loss_fn is None:
+            loss_fn = self.loss_fn
+
+        losses = []
+        self.model.eval()
+        total_loss = 0
+        y_true = np.array([])
+        y_pred = np.array([])
+
+        for x, label in loader:
+            x, label = x.to(self.device), label.to(
+                self.device, dtype=torch.long
+            )  # Assume label is long tensor
+            predicted_value = self.model(x)
+            loss = loss_fn(predicted_value, label)
+            total_loss += loss.item()
+
+            if get_accuracy:
+                _, predicted_label = torch.max(
+                    predicted_value, 1
+                )  # Get the predicted labels
+                y_true = np.concatenate((y_true, label.cpu().numpy().reshape(-1)))
+                y_pred = np.concatenate(
+                    (y_pred, predicted_label.cpu().numpy().reshape(-1))
+                )
+
+        if get_accuracy:
+            # report = classification_report(y_true, y_pred, zero_division=0)  # Calculate classification report
+            # conf_matrix = confusion_matrix(y_true, y_pred)  # Calculate Confusion Matrix
+            # print("Classification Report:\n", report)
+            # print("Confusion Matrix:\n", conf_matrix)
+            print(
+                "Accuracy:", np.sum(y_true == y_pred) / len(y_true)
+            )  # Calculate accuracy
+
+        return total_loss / len(loader)
+
     def train(self, train_loader, val_loader, batch_size=64, n_epochs=50, n_features=1):
         model_name = (
             f'{self.output_label}_{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}'
@@ -158,6 +203,8 @@ class Trainer:
                 # x_batch = x_batch.view([batch_size, -1, n_features]).to(self.device)
                 x_batch = x_batch.to(self.device)
                 value_batch = value_batch.to(self.device)
+                if not self.binary_change_detection:
+                    value_batch = value_batch.long()
                 loss = self.train_step(x_batch, value_batch)
                 batch_losses.append(loss)
             training_loss = np.mean(batch_losses)
@@ -165,10 +212,23 @@ class Trainer:
             train_time = datetime.now() - epoch_time
             epoch_time = datetime.now()
             with torch.no_grad():
-                validation_loss, accuracy, accuracy2, positive = self.batch_eval_cycle(
-                    val_loader, get_accuracy=epoch % 5 == 0 or self.val_accuracy
-                )
+                get_accuracy = epoch % 5 == 0 or self.val_accuracy
+                if self.binary_change_detection:
+                    (
+                        validation_loss,
+                        accuracy,
+                        accuracy2,
+                        positive,
+                    ) = self.batch_eval_cycle(val_loader, get_accuracy=get_accuracy)
+                else:
+                    accuracy = 0
+                    accuracy2 = 0
+                    positive = 0
+                    validation_loss = self.batch_eval_cycle_seg(
+                        val_loader, get_accuracy=get_accuracy
+                    )
                 self.validation_losses.append(validation_loss)
+
             if True | (epoch <= 10) | (epoch % 50 == 0) | (epoch == n_epochs):
                 logging.info(
                     f"[{epoch}/{n_epochs}] Training loss: {training_loss:.4f}\t Validation loss: {validation_loss:.4f}, Accuracy: {accuracy*100:.2f}%, Accuracy (Proportional): {accuracy2*100:.2f}%, Positive {positive*100:.2f}%,{datetime.now()}, val time {datetime.now() - epoch_time}, train time {train_time}, total time {datetime.now() - epoch_time + train_time} "
@@ -179,21 +239,27 @@ class Trainer:
         )
         if "_v-" in model_name:
             model_name, version = model_name.split("_v-")
-        torch.save(self.model.state_dict(), f"models/{model_name}.pt")
+        if self.binary_change_detection:
+            torch.save(self.model.state_dict(), f"models/{model_name}.pt")
+        else:
+            torch.save(self.model.state_dict(), f"models_seg/{model_name}.pt")
         plot_train_losses(self.train_losses, self.validation_losses, self.output_label)
         return model_name
 
     def test(self, test_loader):
         with torch.no_grad():
-            test_loss, accuracy, accuracy2, positive = self.batch_eval_cycle(
-                test_loader, get_accuracy=True
-            )
-            logging.info(f"Test loss: {test_loss:.4f}\t ")
-            logging.info(f"Accuracy of the network: {100 * accuracy:.2f}%")
-            logging.info(
-                f"Accuracy of the network (proportional): {100 * accuracy2:.2f}%"
-            )
-            logging.info(f"Positive: {100 * positive:.2f}%")
+            if self.binary_change_detection:
+                test_loss, accuracy, accuracy2, positive = self.batch_eval_cycle(
+                    test_loader, get_accuracy=True
+                )
+                logging.info(f"Test loss: {test_loss:.4f}\t ")
+                logging.info(f"Accuracy of the network: {100 * accuracy:.2f}%")
+                logging.info(
+                    f"Accuracy of the network (proportional): {100 * accuracy2:.2f}%"
+                )
+                logging.info(f"Positive: {100 * positive:.2f}%")
+            else:
+                test_loss = self.batch_eval_cycle_seg(test_loader, get_accuracy=True)
 
         return test_loss
 

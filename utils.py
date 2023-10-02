@@ -73,6 +73,7 @@ def getTrainer(
     val_accuracy,
     weight,
     load_model=None,
+    binary_change_detection=True,
 ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if load_model:
@@ -85,24 +86,30 @@ def getTrainer(
                 new_net = params[1]
             logging.info(f"Changing net from {net} to {new_net}")
             net = new_net
-    model = get_model(net, net_reduction)
+    model = get_model(net, net_reduction, binary_change_detection)
     logging.info(f"Weight: {weight}")
-    criterion = torch.nn.BCEWithLogitsLoss(
-        pos_weight=torch.tensor([float(weight)]).to(device)
-    )
+    if binary_change_detection:
+        criterion = torch.nn.BCEWithLogitsLoss(
+            pos_weight=torch.tensor([float(weight)]).to(device)
+        )
+    else:
+        class_weights_tensor = weight.to(device)
+        criterion = torch.nn.CrossEntropyLoss(weight=class_weights_tensor)
     # optimizer = torch.optim.SGD(
     #     model.parameters(),
     #     momentum=0.9,
     #     lr=lr,
     #     weight_decay=0.0001,
     # )
+
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     trainer = Trainer(
         model=model,
-        output_label=f"p_{net}${str(uuid.uuid4())[0:8]}",
+        output_label=f"s_{net}${str(uuid.uuid4())[0:8]}",
         load_model=load_model,
         loss_fn=criterion,
         optimizer=optimizer,
         val_accuracy=val_accuracy == 1,
+        binary_change_detection=binary_change_detection,
     )
     return trainer
