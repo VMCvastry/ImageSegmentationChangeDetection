@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 import numpy as np
 import rasterio
@@ -140,10 +141,7 @@ def detect_data(root) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     return images_sources, labels_sources
 
 
-def balance_dataset(train_loader, binary):
-    if not binary:
-        raise NotImplementedError
-
+def balance_dataset_binary(train_loader):
     labels_positive = 0
     total_elements = 0
 
@@ -154,9 +152,57 @@ def balance_dataset(train_loader, binary):
     labels_negative = total_elements - labels_positive
 
     logging.info(
-        f"Positive labels: {labels_positive}/{labels_negative}, {labels_positive *100 / (labels_negative + labels_positive)}"
+        f"Positive labels: {labels_positive}/{labels_negative}, {labels_positive * 100 / (labels_negative + labels_positive)}"
     )
     return labels_negative / labels_positive
+
+
+def balance_dataset_seg(train_loader):
+    class_counts = torch.zeros(
+        43, dtype=torch.float32
+    )  # Initialize a counter for each class
+
+    for (
+        _,
+        label,
+    ) in (
+        train_loader.dataset
+    ):  # Assuming the label is a single channel with class IDs for each pixel
+        for class_id in range(43):
+            class_counts[class_id] += torch.sum(
+                label == class_id
+            ).item()  # Count pixels for each class
+
+    total_elements = torch.sum(class_counts).item()
+    class_weights = total_elements / class_counts
+
+    max_weight = 1.0 * 10**4  # clamp extremely rare classes
+    class_weights = torch.clamp(class_weights, max=max_weight)
+
+    median_weight = torch.median(class_weights)
+    normalized_class_weights = class_weights / median_weight  # normalize weights
+
+    # # Handling the case when class_counts[class_id] is 0, to avoid nan values in class_weights
+    # class_weights[class_counts == 0] = 1
+
+    logging.info(
+        f"Class counts: {class_counts.tolist()} \nWeights: {normalized_class_weights.tolist()}"
+    )
+
+    mean_weight = torch.mean(class_weights)
+    test_weights = class_weights / mean_weight  # normalize weights
+    logging.info(f"Weights with mean: {test_weights.tolist()}")
+    return normalized_class_weights
+
+
+def balance_dataset(train_loader, binary):
+    start = time.time()
+    if not binary:
+        weights = balance_dataset_seg(train_loader)
+    else:
+        weights = balance_dataset_binary(train_loader)
+    logging.info(f"Balance dataset took {time.time() - start:.2f}s")
+    return weights
 
 
 if __name__ == "__main__":
