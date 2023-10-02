@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--val_accuracy", type=int, default=0)
     parser.add_argument("--load_model", type=str, default=None)
     parser.add_argument("--n-patches", type=int, default=4)
-    parser.add_argument("--binary", type=bool, default=False)
+    parser.add_argument("--binary", type=int, default=1)
 
     args = parser.parse_args()
     batch_size = args.bs
