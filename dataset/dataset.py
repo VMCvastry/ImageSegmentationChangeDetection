@@ -36,9 +36,6 @@ class DynamicEarthNet(Dataset):
         self.img_pairs, self.label_pairs = get_pairs(images_sources, labels_sources)
         print(f"Found {len(self.img_pairs)} pairs of images and labels")
         self.n_patches = n_patches
-        # self.img_pairs, self.labels = balance_dataset(
-        #     self.img_pairs, self.labels, self.binary_change_detection
-        # )
 
     def __len__(self):
         return len(self.img_pairs) * self.n_patches
@@ -66,7 +63,7 @@ class DynamicEarthNet(Dataset):
         label = get_patch(label, patch_number, self.n_patches)
         # if not self.binary_change_detection:
         #     label = get_one_hot_from_mask(label)
-        label = torch.from_numpy(np.array(label, dtype=np.float32))  # why float?
+        label = torch.from_numpy(np.array(label, dtype=np.float32))
         return img, label
 
 
